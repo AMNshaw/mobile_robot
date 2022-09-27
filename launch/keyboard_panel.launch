@@ -1,0 +1,5 @@
+<launch>
+    <group ns="MAV1">
+        <node name='keyboard_panel' pkg='flight_control' type='keyboard_panel' output="screen"></node>
+    </group>
+</launch>

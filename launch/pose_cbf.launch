@@ -1,0 +1,13 @@
+<launch>
+    <include file="$(find vrpn_client_ros)/launch/sample.launch"></include>
+    <group ns="MAV1">
+        <include file="$(find mavros)/launch/px4.launch">
+        </include>
+        <node name="topic_tool" pkg="flight_control" type="topic_tool"></node>
+        <node name="velocity_cbf_generator" pkg="flight_control" type="velocity_cbf_generator" output="screen">
+            <rosparam subst_value="true">
+                use_input: "position"  #velocity,position
+           </rosparam>
+       </node>
+    </group>
+</launch>
