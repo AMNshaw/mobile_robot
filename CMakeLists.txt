@@ -150,83 +150,85 @@ set(HEADERS_ include/flight_control/jetsonConstants.h  include/flight_control/je
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/flight_control_node.cpp)
+
 add_executable(time_trigger src/time_trigger.cpp ${HEADERS_})
-add_executable(sync src/sync.cpp)
-add_executable(follow_test2 src/follow_test2.cpp)
-add_executable(vio src/vio.cpp)
-add_executable(plot src/plot.cpp)
-add_executable(attitude_control src/attitude_control.cpp)
-add_executable(vio_trajectory src/vio_trajectory.cpp)
-add_executable(motive src/motive.cpp)
-add_executable(topic_tool src/topic_tool.cpp)
-add_executable(attitude_compute src/attitude_compute.cpp)
-add_executable(velocity_cbf_generator node/velocity_cbf_generator_node.cpp
-                                  src/getch.cpp)
-add_executable(keyboard_panel node/keyboard_panel_node.cpp
-                                  src/getch.cpp)
-## Rename C++ executable without prefix
-## The above recommended prefix causes long target names, the following renames the
-## target back to the shorter version for ease of user use
-## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
 target_link_libraries(time_trigger
   ${catkin_LIBRARIES} 
   jetson_tx2
-    )
-target_link_libraries(sync
-  ${catkin_LIBRARIES} 
-    )
-target_link_libraries(motive
-  ${catkin_LIBRARIES} 
-    )
+)
 
-target_link_libraries(velocity_cbf_generator
-  ${catkin_LIBRARIES} 
-  OsqpEigen::OsqpEigen
-    )
-target_include_directories(velocity_cbf_generator PRIVATE
-  include/${PROJECT_NAME}/
+add_executable(sync src/sync.cpp)
+target_link_libraries(sync
+	${catkin_LIBRARIES} 
 )
-target_link_libraries(keyboard_panel
-  ${catkin_LIBRARIES} 
-)
-target_include_directories(keyboard_panel PRIVATE
-  include/${PROJECT_NAME}/
-)
-target_link_libraries(follow_test2
-  ${catkin_LIBRARIES} 
-    )
-target_link_libraries(vio
-  ${catkin_LIBRARIES} 
-  qp
-    )
-target_link_libraries(topic_tool
-  ${catkin_LIBRARIES} 
-    )
+
+add_executable(follow_test2 src/follow_test2.cpp)
+target_link_libraries(follow_test2 ${catkin_LIBRARIES})
+
+add_executable(vio src/vio.cpp)
+target_link_libraries(vio ${catkin_LIBRARIES} 
+	qp )
+
+add_executable(plot src/plot.cpp)
 target_link_libraries(plot
-  ${catkin_LIBRARIES} 
-    )
+  ${catkin_LIBRARIES} )
+
+#attitude_control
+add_executable(attitude_control src/attitude_control.cpp)
 target_link_libraries(attitude_control
-  ${catkin_LIBRARIES} 
-  ${PYTHON_LIBRARIES}
-  qp
-    )
+	${catkin_LIBRARIES} 
+	${PYTHON_LIBRARIES}
+	qp )
+
+#vio_trajectory
+add_executable(vio_trajectory src/vio_trajectory.cpp)
 target_link_libraries(vio_trajectory
   ${catkin_LIBRARIES} 
   ${PYTHON_LIBRARIES}
     )
+
+#motive
+add_executable(motive src/motive.cpp)
+target_link_libraries(motive 
+	${catkin_LIBRARIES} )
+
+#attitude_compute
+add_executable(attitude_compute src/attitude_compute.cpp)
 target_link_libraries(attitude_compute
-  ${catkin_LIBRARIES} 
-    )
+  ${catkin_LIBRARIES} )
+
+#velocity_cbf_generator
+add_executable(velocity_cbf_generator 
+	node/velocity_cbf_generator_node.cpp 
+	src/getch.cpp )
+target_link_libraries(velocity_cbf_generator 
+	${catkin_LIBRARIES} 
+	OsqpEigen::OsqpEigen )
+target_include_directories(velocity_cbf_generator PRIVATE
+	include/${PROJECT_NAME}/ )
+
+#		keyboard_panel
+add_executable(keyboard_panel 
+	node/keyboard_panel_node.cpp
+    src/getch.cpp)
+target_link_libraries(keyboard_panel
+	${catkin_LIBRARIES} )
+target_include_directories(keyboard_panel PRIVATE
+	include/${PROJECT_NAME}/ )
+
+#		topic_tool
+add_executable(topic_tool src/topic_tool.cpp)
+target_link_libraries(topic_tool
+	${catkin_LIBRARIES} )
+
+#		topic_tool
+add_executable(leader_pose node/leader_pose_node.cpp
+	src/getch.cpp)
+target_link_libraries(leader_pose
+	${catkin_LIBRARIES} )
+target_include_directories(leader_pose PRIVATE
+	include/${PROJECT_NAME}/ )
+
 #############
 ## Install ##
 #############
