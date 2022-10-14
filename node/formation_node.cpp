@@ -13,6 +13,7 @@
 #include <tf/tf.h>
 #include <geometry_msgs/Point.h>
 #define gravity 9.806
+#define UAV_ID 1
 using namespace std;
 
 bool init = false;
@@ -25,277 +26,103 @@ double roll = 0, pitch = 0, yaw = 0;
 
 
 geometry_msgs::PoseStamped leader_pose;
-geometry_msgs::PoseStamped[5] MAV_pose;
+geometry_msgs::PoseStamped MAV_pose[5];
 
-void host_pos(const geometry_msgs::PoseStamped::ConstPtr& msg){
+void leader_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
     //store odometry into global variable
-    host_mocap.header = msg->header;
-    host_mocap.pose.position = msg->pose.position;
-    host_mocap.pose.orientation = msg->pose.orientation;
-
-    //store intial pose for first callback
-    if(init == false){
-        initial_pose = host_mocap;
-        init = true;
-    }
-
+    MAV_pose[0].header = msg->header;
+    MAV_pose[0].pose.position = msg->pose.position;
+    MAV_pose[0].pose.orientation = msg->pose.orientation;
+}
+void mav1_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+    //store odometry into global variable
+    MAV_pose[1].header = msg->header;
+    MAV_pose[1].pose.position = msg->pose.position;
+    MAV_pose[1].pose.orientation = msg->pose.orientation;
+}
+void mav2_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+    //store odometry into global variable
+    MAV_pose[2].header = msg->header;
+    MAV_pose[2].pose.position = msg->pose.position;
+    MAV_pose[2].pose.orientation = msg->pose.orientation;
+}
+void mav3_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+    //store odometry into global variable
+    MAV_pose[3].header = msg->header;
+    MAV_pose[3].pose.position = msg->pose.position;
+    MAV_pose[3].pose.orientation = msg->pose.orientation;
+}
+void mav4_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+    //store odometry into global variable
+    MAV_pose[4].header = msg->header;
+    MAV_pose[4].pose.position = msg->pose.position;
+    MAV_pose[4].pose.orientation = msg->pose.orientation;
 }
 
-void follow(vir& vir, geometry_msgs::PoseStamped& host_mocap, geometry_msgs::TwistStamped* vs, float vx, float vy, float ax, float ay)
-{
-    double errx, erry, errz, err_yaw;
-    double ux, uy, uz, uyaw;
-
-    //compute error: desired - measurement
-    errx = vir.x - host_mocap.pose.position.x;
-    erry = vir.y - host_mocap.pose.position.y;
-    errz = vir.z - host_mocap.pose.position.z;
-    err_yaw = vir.yaw - yaw;
-
-    if(err_yaw>M_PI)
-    err_yaw = err_yaw - 2*M_PI;
-    else if(err_yaw<-M_PI)
-    err_yaw = err_yaw + 2*M_PI;
-
-    ROS_INFO("err: %.3f,%.3f,%.3f,%.3f", errx, erry, errz, err_yaw/M_PI*180);
-
-    if(start == false){
-        ux = KPx*errx;
-        uy = KPy*erry;
-        uz = KPz*errz;
-        uyaw = KPyaw*err_yaw;
-    }
-    else{
-        //feedback + feedforward control
-        ux = KPx*errx + vx;
-        uy = KPy*erry + vy;
-        uz = KPz*errz;
-        uyaw = KPyaw*err_yaw;
-    }
-
-    //set max&min for control input
-    if(ux<=-1.5 ||ux>=1.5)
-    {
-      ux = 1.5*ux/abs(ux);
-    }
-    if(uy<=-1.5 ||uy>=1.5)
-    {
-      uy = 1.5*uy/abs(uy);
-    }
-    if(uz<=-0.4 ||uz>=0.4)
-    {
-      uz = 0.4*uz/abs(uz);
-    }
-    //output control input
-    vs->twist.linear.x = ux;
-    vs->twist.linear.y = uy;
-    vs->twist.linear.z = uz;
-    vs->twist.angular.z = uyaw;
-}
 
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "formation");
     ros::NodeHandle nh;
-    int MAV_self_id = 1;
-    int MAV_connect_num =1;
-    int MAV_connect_id[2];
-    MAV_connect_id[0] = 2;
     
-    string MAV_self_topic = "/vrpn_client_node/MAV" + MAV_self_id.toString() + "/pose";
-    for(int i=0; i<MAV_connect_num ; i++){
+    //Subscriber
+    ros::Subscriber leader_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>("/leader_pose", 10,leader_pose_cb);    
+    ros::Subscriber mav1_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV1/pose", 10, mav1_cb);
+    ros::Subscriber mav2_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV2/pose", 10, mav2_cb);
+    ros::Subscriber mav3_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV3/pose", 10, mav3_cb);
+    ros::Subscriber mav4_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV4/pose", 10, mav4_cb);
+
+    //Publisher    
+    ros::Publisher desired_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("desired_velocity_raw", 100);
+
+    bool laplacian_map[5][5] = { 1,   0,  0,  0,  0,
+                                 1,   1,  0,  0,  0,
+                                 1,   1,  1,  0,  0,
+                                 1,   1,  0,  1,  0,
+                                 0,   1,  0,  0,  1
+                               };
+    float leader_uav_vector_x[5] = {0,0.5,-0.5,-0.5,0.5 };  //vector x from leader to uav
+    float leader_uav_vector_y[5] = {0,0.5,0.5 ,-0.5,-0.5};  //vector y from leader to uav
+    float relative_map_x[5][5];
+    float relative_map_y[5][5];
+    for(int i = 0 ; i<5; i++){
+        for(int j = 0 ; j<5 ; j++){
+            relative_map_x[i][j] = leader_uav_vector_x[i] - leader_uav_vector_x[j];
+            relative_map_y[i][j] = leader_uav_vector_y[i] - leader_uav_vector_y[j];
+        }
     }
-    string MAV_self_topic = "/vrpn_client_node/MAV" + MAV_self_id.toString() + "/pose";
-
-    
-    ros::Subscriber host_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV1/pose", 10, host_pose_cb);
-    ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-//    ros::Publisher mocap_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("/mavros/mocap/pose", 2);
-    ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("/mavros/cmd/arming");
-    ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
-    ros::Subscriber host_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV1/pose", 10, host_pos);
-    //output final command to flight controller
-    ros::Publisher local_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/mavros/setpoint_velocity/cmd_vel", 2);
-    ros::Publisher pos_pub = nh.advertise<geometry_msgs::PoseStamped>("/desired_position", 2);
-    ros::Publisher vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/desired_velocity", 2);
-
+    cout << "relative map x\n";
+    for(int i = 0;i<5;i++){
+        for(int j=0;j<5;j++){
+            cout << relative_map_x[i][j] << "\t";
+        }
+        cout << "\n";
+    }
+    cout << "relative map y\n";
+    for(int i = 0;i<5;i++){
+        for(int j=0;j<5;j++){
+            cout << relative_map_y[i][j] << "\t";
+        }
+        cout << "\n";
+    }
     // The setpoint publishing rate MUST be faster than 2Hz.
-    ros::Rate rate(50);
+    ros::Rate rate(100);
 
-    // Wait for FCU connection.
-    while (ros::ok() && current_state.connected) {
-        //mocap_pos_pub.publish(host_mocap);
-        ros::spinOnce();
-        rate.sleep();
-    }
-    geometry_msgs::PoseStamped desired_pos;
     geometry_msgs::TwistStamped desired_vel;
 
-    //initialize desired state
-    vir vir1;
-    vir1.x = 0;
-    vir1.y = 0;
-    vir1.z = 0.5;
-    vir1.yaw = 0;
-    //initialize control input
-    geometry_msgs::TwistStamped vs;
-    vs.twist.linear.x = 0;
-    vs.twist.linear.y = 0;
-    vs.twist.linear.z = 0;
-    vs.twist.angular.x = 0;
-    vs.twist.angular.y = 0;
-    vs.twist.angular.z = 0;
-    double T = 2*M_PI;
-    double r = 0.5, a = 1;
-    double t = 0, dt = 0.02;
-
-    //send a few setpoints before starting
-    for(int i = 100; ros::ok() && i > 0; --i){
-        local_vel_pub.publish(vs);
-        vir1.x = 0;
-        vir1.y = 0;
-        vir1.z = 0.5;
-        vir1.yaw = yaw;
-        ROS_INFO("initial_pose: %3f, %3f, %3f", initial_pose.pose.position.x, initial_pose.pose.position.y, initial_pose.pose.position.z);
-
-        ros::spinOnce();
-        rate.sleep();
-    }
-    //set offboard mode and ready to arm
-    mavros_msgs::SetMode offb_set_mode;
-    offb_set_mode.request.custom_mode = "OFFBOARD";
-
-    mavros_msgs::CommandBool arm_cmd;
-    arm_cmd.request.value = true;
-
-    ros::Time last_request = ros::Time::now();
-    //ros::Time last_request(0);
-
     while (ros::ok()) {
-        //mocap_pos_pub.publish(host_mocap);
-        if (current_state.mode != "OFFBOARD" &&
-                (ros::Time::now() - last_request > ros::Duration(5.0))) {
-            if( set_mode_client.call(offb_set_mode) &&
-                    offb_set_mode.response.mode_sent) {
-                ROS_INFO("Offboard enabled");
-            }
-            last_request = ros::Time::now();
-        } else {
-
-            if (!current_state.armed &&
-                    (ros::Time::now() - last_request > ros::Duration(5.0))) {
-                if( arming_client.call(arm_cmd) &&
-                        arm_cmd.response.success) {
-                    ROS_INFO("Vehicle armed");
-                }
-                last_request = ros::Time::now();
+        desired_vel.twist.linear.x = 0;
+        desired_vel.twist.linear.y = 0;
+        desired_vel.twist.linear.z = 0;
+        for(int i =0 ;i<5;i++){
+            if(laplacian_map[UAV_ID][i] == 1){
+                desired_vel.twist.linear.x += MAV_pose[i].pose.position.x - MAV_pose[UAV_ID].pose.position.x + relative_map_x[UAV_ID][i] ;
+                desired_vel.twist.linear.y += MAV_pose[i].pose.position.y - MAV_pose[UAV_ID].pose.position.y + relative_map_y[UAV_ID][i] ;
+                desired_vel.twist.linear.z += MAV_pose[i].pose.position.z - MAV_pose[UAV_ID].pose.position.z;
             }
         }
-
-        //keyboard control
-        int c = getch();
-        //ROS_INFO("C: %d",c);
-        if (c != EOF) {
-            switch (c) {
-                case 65:    // key up
-                    vir1.z += 0.05;
-                    break;
-                case 66:    // key down
-                    vir1.z += -0.05;
-                    break;
-                case 67:    // key CW(->)
-                    vir1.yaw -= 0.03;
-                    break;
-                case 68:    // key CCW(<-)
-                    vir1.yaw += 0.03;
-                    break;
-                case 119:    // key foward(w)
-                    vir1.x += 0.05;
-                    break;
-                case 120:    // key back(x)
-                    vir1.x += -0.05;
-                    break;
-                case 97:    // key left(a)
-                    vir1.y += 0.05;
-                    break;
-                case 100:    // key right(d)
-                    vir1.y -= 0.05;
-                    break;
-                case 115:    // key origin(s)
-                {
-//                    vir1.x = initial_pose.pose.position.x;
-//                    vir1.y = initial_pose.pose.position.y;
-                    vir1.z = initial_pose.pose.position.z + 0.1;
-                    break;
-                }
-                case 108:    // closed arming(l)
-                {
-                    offb_set_mode.request.custom_mode = "MANUAL";
-                    set_mode_client.call(offb_set_mode);
-                    arm_cmd.request.value = false;
-                    arming_client.call(arm_cmd);
-                    break;
-                }
-                case 116:    // (t)
-                {
-                    if(start == true){
-                    start = false;
-                    }
-                    else if(start == false){
-                    start = true;
-                    }
-                    break;
-                }
-                case 105:    // i
-                {
-
-
-                break;
-                }
-                case 63:
-                return 0;
-                break;
-            }
-        }
-
-        if(vir1.yaw>M_PI)
-        vir1.yaw = vir1.yaw - 2*M_PI;
-        else if(vir1.yaw<-M_PI)
-        vir1.yaw = vir1.yaw + 2*M_PI;
-
-        if(start == true){
-            //circular trajectory: r is amplitude of circle, T is the period
-            vir1.x = r*cos(2*M_PI*t/T);
-            vir1.y = r*sin(2*M_PI*t/T);
-
-            desired_vel.twist.linear.x = -r*sin(2*M_PI*t/T)*2*M_PI/T;
-            desired_vel.twist.linear.y = r*cos(2*M_PI*t/T)*2*M_PI/T;
-            desired_vel.twist.linear.z = 0;
-            t += dt;
-        }
-        else{
-            desired_vel.twist.linear.x = 0;
-            desired_vel.twist.linear.y = 0;
-            desired_vel.twist.linear.z = 0;
-        }
-        ROS_INFO("setpoint: %.2f, %.2f, %.2f, %.2f", vir1.x, vir1.y, vir1.z, vir1.yaw/M_PI*180);
-        //input desired position and measurement, may plus feedforward velocity
-        //output control input vs
-        follow(vir1, host_mocap, &vs, desired_vel.twist.linear.x, desired_vel.twist.linear.y, 0, 0);
-
-        //update desired position and velocity
-        desired_pos.header.stamp = ros::Time::now();
-        desired_pos.pose.position.x = vir1.x;
-        desired_pos.pose.position.y = vir1.y;
-        desired_pos.pose.position.z = vir1.z;
-        desired_pos.pose.orientation = tf::createQuaternionMsgFromYaw(vir1.yaw);
-        desired_vel.header.stamp = ros::Time::now();
-
-        //mocap_pos_pub.publish(host_mocap);
-        local_vel_pub.publish(vs);
-        pos_pub.publish(desired_pos);
-        vel_pub.publish(desired_vel);
+        desired_vel_pub.publish(desired_vel);
 
         ros::spinOnce();
         rate.sleep();

@@ -4,6 +4,7 @@
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
+#include <std_msgs/Int32.h>
 #include "getch.h"
 #include <cmath>
 #include <tf/tf.h>
@@ -11,10 +12,11 @@
 #include "OsqpEigen/OsqpEigen.h"
 #include <Eigen/Dense>
 #define gravity 9.806
-
+#define UAV_ID 1
 
 using namespace std;
 
+int uav_id = UAV_ID;
 bool desired_input_init = false;
 bool pose_init = false;
 
@@ -27,7 +29,8 @@ double roll = 0, pitch = 0, yaw = 0;
 // var for desired_pose
 geometry_msgs::PoseStamped desired_pose;
 double desired_yaw = 0;
-
+int kill_all_drone = 0;
+int start_all_drone = 0;
 // var for desired_velocity
 geometry_msgs::TwistStamped desired_vel_raw;
 geometry_msgs::TwistStamped desired_vel;        //output
@@ -191,6 +194,14 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             return 0;
 }
 
+void start_cb(const std_msgs::Int32 msg){
+    //store odometry into global variable
+    start_all_drone = msg.data;
+}
+void kill_cb(const std_msgs::Int32 msg){
+    //store odometry into global variable
+    kill_all_drone = msg.data;
+}
 int main(int argc, char **argv)
 {
    
@@ -205,14 +216,17 @@ int main(int argc, char **argv)
        use_input_s = "position";
     }	
     std::cout<< use_input_s << "\n";
-
+    string MAV_self_topic = "/vrpn_client_node/MAV" + to_string(uav_id) + "/pose";
     //    subscriber    //
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 100, state_cb);
-    ros::Subscriber host_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV1/pose", 10, host_pose_cb);
+    ros::Subscriber host_sub = nh.subscribe<geometry_msgs::PoseStamped>(MAV_self_topic, 10, host_pose_cb);
     
     ros::Subscriber desired_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>("desired_pose", 10, desired_pose_cb);
-    ros::Subscriber desired_velocity_sub = nh.subscribe<geometry_msgs::TwistStamped>("desired_vel", 10, desired_vel_cb);
+    ros::Subscriber desired_velocity_sub = nh.subscribe<geometry_msgs::TwistStamped>("desired_velocity_raw", 10, desired_vel_cb);
     ros::Subscriber obstacle_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/obstacle/pose", 10, obstacle_pose_cb);
+    
+    ros::Subscriber uav_start_sub = nh.subscribe<std_msgs::Int32>("/uav_start", 10, start_cb);
+    ros::Subscriber uav_killer_sub = nh.subscribe<std_msgs::Int32>("/uav_kill", 10, kill_cb);
     // publisher
     ros::Publisher local_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 2);
     // service
@@ -227,14 +241,26 @@ int main(int argc, char **argv)
         ROS_INFO("Wait for pose and desired input init %d,%d",desired_input_init,pose_init);
     }
     ROS_INFO("pose initialized");
-
+   /* 
     ROS_INFO("Wait for FCU connection");
     while (ros::ok() && !current_state.connected) {
         ros::spinOnce();
         rate.sleep();
     	ROS_INFO("Wait for FCU");
-    }
+    }*/
     ROS_INFO("FCU connected");
+
+    ROS_INFO("Wait for UAV all start signal");
+    while (ros::ok()) {
+        if(start_all_drone == 1){
+            break;
+        }
+        ros::spinOnce();
+        rate.sleep();
+    	ROS_INFO("Wait for UAV all start signal");
+    }
+    ROS_INFO("get UAV all start signal");
+
     
     //send a few velocity setpoints before starting
     for(int i = 0; ros::ok() && i < 20; i++){
@@ -277,24 +303,13 @@ int main(int argc, char **argv)
         }
     
         //keyboard control
-        int c = getch();
-        //ROS_INFO("C: %d",c);
-        if (c != EOF) {
-            switch (c) {
-                case 108:    // closed arming(l)
-                {
-                    offb_set_mode.request.custom_mode = "STABILIZED";
-                    set_mode_client.call(offb_set_mode);
-                    arm_cmd.request.value = false;
-                    arming_client.call(arm_cmd);
-                    break;
-                }
-                case 63:
-                return 0;
-                break;
-            }
+        if(kill_all_drone == 1){
+            ROS_WARN("velocity_cbf_kill!");
+            offb_set_mode.request.custom_mode = "STABILIZED";
+            set_mode_client.call(offb_set_mode);
+            arm_cmd.request.value = false;
+            arming_client.call(arm_cmd);
         }
-
         //ROS_INFO("setpoint: %.2f, %.2f, %.2f, %.2f", desired_pose.pose.position.x, desired_pose.pose.position.y, desired_pose.pose.position.z, desired_yaw/M_PI*180);
         //follow desired_pose
         if(use_input_s == "position"){

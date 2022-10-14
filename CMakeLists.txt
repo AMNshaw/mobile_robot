@@ -221,7 +221,7 @@ add_executable(topic_tool src/topic_tool.cpp)
 target_link_libraries(topic_tool
 	${catkin_LIBRARIES} )
 
-#		topic_tool
+#		leader_pose
 add_executable(leader_pose node/leader_pose_node.cpp
 	src/getch.cpp)
 target_link_libraries(leader_pose
@@ -229,6 +229,12 @@ target_link_libraries(leader_pose
 target_include_directories(leader_pose PRIVATE
 	include/${PROJECT_NAME}/ )
 
+#		formation
+add_executable(formation node/formation_node.cpp)
+target_link_libraries(formation
+	${catkin_LIBRARIES} )
+target_include_directories(formation PRIVATE
+	include/${PROJECT_NAME}/ )
 #############
 ## Install ##
 #############
