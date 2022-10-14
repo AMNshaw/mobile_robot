@@ -27,6 +27,7 @@ enum {
 
 int leader_mode;
 int kill_all_drone = 0;
+int start_all_drone = 0;
 
 void start_takeoff(){
 	if(leader_mode == TAKEOFF || leader_pose.pose.position.z>0.1 ){
@@ -96,8 +97,9 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
 
-  ros::Publisher leader_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("leader_pose", 10);
-  ros::Publisher uav_killer_pub = nh.advertise<std_msgs::Int32>("uav_kill", 10);
+  ros::Publisher leader_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/leader_pose", 10);
+  ros::Publisher uav_killer_pub = nh.advertise<std_msgs::Int32>("/uav_kill", 10);
+  ros::Publisher uav_start_pub = nh.advertise<std_msgs::Int32>("/uav_start", 10);
   ros::Rate loop_rate(100);
   
   leader_pose.header.stamp = ros::Time::now();
@@ -111,7 +113,7 @@ int main(int argc, char **argv)
   leader_pose.pose.orientation.w = 1.0;
 
   trajectory_t = 0;
-	ROS_INFO("t:takeoff l:land e:start_trajectory p:stop_trajectory k:kill_all_drone");
+	ROS_INFO("t:takeoff l:land e:start_trajectory p:stop_trajectory k:kill_all_drone s:start_all_drone");
   while (ros::ok())
   {
         //keyboard control
@@ -128,12 +130,16 @@ int main(int argc, char **argv)
                 case 101:    // (e) start_trajectory_following
                     start_trajectory_following();
                     break;
-                case 112:    // (e) start_trajectory_following
+                case 112:    // (p) stop_trajectory_following
                     stop_trajectory();
                     break;
                 case 107:    // (k) uav_kill
 					kill_all_drone = 1;
 					ROS_WARN("kill all drone");
+                    break;
+                case 115:    // (s) uav_start
+					start_all_drone = 1;
+					ROS_INFO("start all drone");
                     break;
 			}
         }
@@ -145,6 +151,9 @@ int main(int argc, char **argv)
 	std_msgs::Int32 kill_msg;
 	kill_msg.data=kill_all_drone;
 	uav_killer_pub.publish(kill_msg);
+	std_msgs::Int32 start_msg;
+	start_msg.data=start_all_drone;
+	uav_start_pub.publish(start_msg);
     leader_pose_pub.publish(leader_pose);
     ros::spinOnce();
 
