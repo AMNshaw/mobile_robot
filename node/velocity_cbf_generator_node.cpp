@@ -168,7 +168,7 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             double gamma = 0.5;
             upperBound <<  gamma*(pow((obstacle_pose.pose.position.x - host_mocap.pose.position.x ),2)+
             pow((obstacle_pose.pose.position.y - host_mocap.pose.position.y ),2)-
-            pow( 1,2)
+            pow( 0.5 ,2)
             );
 
             OsqpEigen::Solver solver;
