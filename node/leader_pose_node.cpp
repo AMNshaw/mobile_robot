@@ -10,7 +10,7 @@
 #define LEADER_INIT_X -1.0f
 #define LEADER_INIT_Y 0.0f
 #define TAKEOFF_SPEED 0.5f
-#define TAKEOFF_HEIGHT 1.4f
+#define TAKEOFF_HEIGHT 1.2f
 #define LAND_SPEED 0.8f
 #define CONTROL_HZ 100.0f
 
