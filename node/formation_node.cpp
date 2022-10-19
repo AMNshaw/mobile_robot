@@ -79,8 +79,8 @@ int main(int argc, char **argv)
     bool laplacian_map[5][5] = { 1,   0,  0,  0,  0,
                                  1,   1,  0,  0,  0,
                                  1,   1,  1,  0,  0,
-                                 1,   1,  0,  1,  0,
-                                 0,   1,  0,  0,  1
+                                 1,   1,  1,  1,  0,
+                                 1,   1,  1,  1,  1
                                };
     float leader_uav_vector_x[5] = {0,0.5,-0.5,-0.5,0.5 };  //vector x from leader to uav
     float leader_uav_vector_y[5] = {0,0.5,0.5 ,-0.5,-0.5};  //vector y from leader to uav

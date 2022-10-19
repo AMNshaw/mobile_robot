@@ -168,7 +168,7 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             double gamma = 0.5;
             upperBound <<  gamma*(pow((obstacle_pose.pose.position.x - host_mocap.pose.position.x ),2)+
             pow((obstacle_pose.pose.position.y - host_mocap.pose.position.y ),2)-
-            pow( 0.5 ,2)
+            pow( 0.3 ,2)
             );
 
             OsqpEigen::Solver solver;
@@ -241,13 +241,12 @@ int main(int argc, char **argv)
         ROS_INFO("Wait for pose and desired input init %d,%d",desired_input_init,pose_init);
     }
     ROS_INFO("pose initialized");
-   /* 
     ROS_INFO("Wait for FCU connection");
     while (ros::ok() && !current_state.connected) {
         ros::spinOnce();
         rate.sleep();
     	ROS_INFO("Wait for FCU");
-    }*/
+    }
     ROS_INFO("FCU connected");
 
     ROS_INFO("Wait for UAV all start signal");
