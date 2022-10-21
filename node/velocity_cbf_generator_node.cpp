@@ -12,11 +12,14 @@
 #include "OsqpEigen/OsqpEigen.h"
 #include <Eigen/Dense>
 #define gravity 9.806
+<<<<<<< HEAD
 #define UAV_ID 2
+=======
+>>>>>>> 98769037d36f4b099240b65e333d02d1aa3b4f5f
 
 using namespace std;
 
-int uav_id = UAV_ID;
+int uav_id;
 bool desired_input_init = false;
 bool pose_init = false;
 
@@ -165,10 +168,17 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             lowerBound.resize(1);
             lowerBound << -OsqpEigen::INFTY;
             upperBound.resize(1);
-            double gamma = 0.5;
+            double gamma, safe_D;
+            ros::param::get("gamma", gamma);
+            ros::param::get("D", safe_D);
+
             upperBound <<  gamma*(pow((obstacle_pose.pose.position.x - host_mocap.pose.position.x ),2)+
             pow((obstacle_pose.pose.position.y - host_mocap.pose.position.y ),2)-
+<<<<<<< HEAD
             pow( 0.3 ,2)
+=======
+            pow( safe_D ,2)
+>>>>>>> 98769037d36f4b099240b65e333d02d1aa3b4f5f
             );
 
             OsqpEigen::Solver solver;
@@ -209,6 +219,8 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "velocity_cbf");
     ros::NodeHandle nh,private_nh("~");
     
+    ros::param::get("ID", uav_id);
+
     string use_input_s;
     if(private_nh.getParam("use_input", use_input_s) == false) {
        ROS_FATAL("No use_input is assigned.");
