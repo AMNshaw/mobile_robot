@@ -10,6 +10,7 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <tf/tf.h>
+#include <string>
 //#define SLAM
 #define Mocap
 
@@ -51,7 +52,9 @@ int main(int argc, char **argv)
 
     ros::Publisher mocap_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/vision_pose/pose", 2);
 #ifdef Mocap
-    ros::Subscriber host_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV1/pose", 10, host_pos);
+    std::string sub_topic;
+    ros::param::get("sub_topic", sub_topic);
+    ros::Subscriber host_sub = nh.subscribe<geometry_msgs::PoseStamped>(sub_topic, 10, host_pos);
 #else
 //    ros::Subscriber host_sub = nh.subscribe<nav_msgs::Odometry> ("/vins_estimator/odometry",2, host_pos);
     ros::Subscriber host_sub = nh.subscribe<nav_msgs::Odometry> ("/estimator/imu_propagate", 2, host_pos);
