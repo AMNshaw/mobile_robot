@@ -13,7 +13,7 @@
 #include <tf/tf.h>
 #include <geometry_msgs/Point.h>
 #define gravity 9.806
-#define UAV_ID 1
+#define UAV_ID 2
 using namespace std;
 
 bool init = false;

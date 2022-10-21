@@ -1,5 +1,5 @@
 <launch>
-    <group ns="MAV1">
+    <group ns="MAV2">
         <include file="$(find mavros)/launch/px4.launch">
         </include>
         <node name="topic_tool" pkg="flight_control" type="topic_tool"></node>

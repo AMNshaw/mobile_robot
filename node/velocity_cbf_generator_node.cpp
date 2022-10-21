@@ -12,7 +12,7 @@
 #include "OsqpEigen/OsqpEigen.h"
 #include <Eigen/Dense>
 #define gravity 9.806
-#define UAV_ID 1
+#define UAV_ID 2
 
 using namespace std;
 
@@ -241,6 +241,7 @@ int main(int argc, char **argv)
         ROS_INFO("Wait for pose and desired input init %d,%d",desired_input_init,pose_init);
     }
     ROS_INFO("pose initialized");
+    
     ROS_INFO("Wait for FCU connection");
     while (ros::ok() && !current_state.connected) {
         ros::spinOnce();
