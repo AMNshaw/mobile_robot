@@ -60,15 +60,17 @@ void mav4_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
     MAV_pose[4].pose.orientation = msg->pose.orientation;
 }
 
-void laplacian_remap(std::vector<bool>laplacian_param, bool laplacian_map[5][5])
+void laplacian_remap(XmlRpc::XmlRpcValue laplacian_param, bool laplacian_map[][5])
 {
     int k = 0;
     for(int i = 0; i < 5; i++)
     {
         for(int j = 0; j < 5; j++)
         {
-            laplacian_map[i][j] = laplacian_param[k];
-            k++;
+	    ROS_ASSERT(laplacian_param[k].getType() == XmlRpc::XmlRpcValue::TypeInt);
+            int a = laplacian_param[k];
+	    laplacian_map[i][j] = a!=0;
+	    k++;
         }
     }
 }
@@ -81,7 +83,6 @@ int main(int argc, char **argv)
 
     ros::param::get("UAV_ID", UAV_ID);
 
-    
     //Subscriber
     ros::Subscriber leader_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>("/leader_pose", 10,leader_pose_cb);    
     ros::Subscriber mav1_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV1/pose", 10, mav1_cb);
@@ -91,12 +92,11 @@ int main(int argc, char **argv)
 
     //Publisher    
     ros::Publisher desired_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("desired_velocity_raw", 100);
-
-    std::vector<bool> laplacian_param;
-    ros::param::get("laplacian", laplacian_param);
-    bool laplacian_map[5][5];
+    XmlRpc::XmlRpcValue laplacian_param;
+    nh.getParam("laplacian", laplacian_param);
+    ROS_ASSERT(laplacian_param.getType() == XmlRpc::XmlRpcValue::TypeArray);
+    bool laplacian_map[5][5] = {0};
     laplacian_remap(laplacian_param, laplacian_map);
-
 
 
     float leader_uav_vector_x[5] = {0,0.5,-0.5,-0.5,0.5 };  //vector x from leader to uav
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
         desired_vel.twist.linear.y = 0;
         desired_vel.twist.linear.z = 0;
         for(int i =0 ;i<5;i++){
-            if(laplacian_map[UAV_ID][i] == true){
+            if(laplacian_map[UAV_ID][i] == 1){
                 desired_vel.twist.linear.x += MAV_pose[i].pose.position.x - MAV_pose[UAV_ID].pose.position.x + relative_map_x[UAV_ID][i] ;
                 desired_vel.twist.linear.y += MAV_pose[i].pose.position.y - MAV_pose[UAV_ID].pose.position.y + relative_map_y[UAV_ID][i] ;
                 desired_vel.twist.linear.z += MAV_pose[i].pose.position.z - MAV_pose[UAV_ID].pose.position.z;
