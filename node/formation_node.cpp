@@ -14,10 +14,6 @@
 #include <tf/tf.h>
 #include <geometry_msgs/Point.h>
 #define gravity 9.806
-<<<<<<< HEAD
-#define UAV_ID 2
-=======
->>>>>>> 98769037d36f4b099240b65e333d02d1aa3b4f5f
 using namespace std;
 
 bool init = false;
@@ -96,14 +92,6 @@ int main(int argc, char **argv)
     //Publisher    
     ros::Publisher desired_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("desired_velocity_raw", 100);
 
-<<<<<<< HEAD
-    bool laplacian_map[5][5] = { 1,   0,  0,  0,  0,
-                                 1,   1,  0,  0,  0,
-                                 1,   1,  1,  0,  0,
-                                 1,   1,  1,  1,  0,
-                                 1,   1,  1,  1,  1
-                               };
-=======
     std::vector<bool> laplacian_param;
     ros::param::get("laplacian", laplacian_param);
     bool laplacian_map[5][5];
@@ -111,7 +99,6 @@ int main(int argc, char **argv)
 
 
 
->>>>>>> 98769037d36f4b099240b65e333d02d1aa3b4f5f
     float leader_uav_vector_x[5] = {0,0.5,-0.5,-0.5,0.5 };  //vector x from leader to uav
     float leader_uav_vector_y[5] = {0,0.5,0.5 ,-0.5,-0.5};  //vector y from leader to uav
     float relative_map_x[5][5];
@@ -146,7 +133,7 @@ int main(int argc, char **argv)
         desired_vel.twist.linear.y = 0;
         desired_vel.twist.linear.z = 0;
         for(int i =0 ;i<5;i++){
-            if(laplacian_map[UAV_ID][i] == 1){
+            if(laplacian_map[UAV_ID][i] == true){
                 desired_vel.twist.linear.x += MAV_pose[i].pose.position.x - MAV_pose[UAV_ID].pose.position.x + relative_map_x[UAV_ID][i] ;
                 desired_vel.twist.linear.y += MAV_pose[i].pose.position.y - MAV_pose[UAV_ID].pose.position.y + relative_map_y[UAV_ID][i] ;
                 desired_vel.twist.linear.z += MAV_pose[i].pose.position.z - MAV_pose[UAV_ID].pose.position.z;

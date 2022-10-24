@@ -12,10 +12,6 @@
 #include "OsqpEigen/OsqpEigen.h"
 #include <Eigen/Dense>
 #define gravity 9.806
-<<<<<<< HEAD
-#define UAV_ID 2
-=======
->>>>>>> 98769037d36f4b099240b65e333d02d1aa3b4f5f
 
 using namespace std;
 
@@ -170,15 +166,11 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             upperBound.resize(1);
             double gamma, safe_D;
             ros::param::get("gamma", gamma);
-            ros::param::get("D", safe_D);
+            ros::param::get("safe_D", safe_D);
 
             upperBound <<  gamma*(pow((obstacle_pose.pose.position.x - host_mocap.pose.position.x ),2)+
             pow((obstacle_pose.pose.position.y - host_mocap.pose.position.y ),2)-
-<<<<<<< HEAD
-            pow( 0.3 ,2)
-=======
             pow( safe_D ,2)
->>>>>>> 98769037d36f4b099240b65e333d02d1aa3b4f5f
             );
 
             OsqpEigen::Solver solver;
@@ -228,7 +220,8 @@ int main(int argc, char **argv)
        use_input_s = "position";
     }	
     std::cout<< use_input_s << "\n";
-    string MAV_self_topic = "/vrpn_client_node/MAV" + to_string(uav_id) + "/pose";
+    string MAV_self_topic;
+    ros::param::get("sub_topic", MAV_self_topic);
     //    subscriber    //
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 100, state_cb);
     ros::Subscriber host_sub = nh.subscribe<geometry_msgs::PoseStamped>(MAV_self_topic, 10, host_pose_cb);
