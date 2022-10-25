@@ -35,39 +35,12 @@ geometry_msgs::TwistStamped desired_vel_raw;
 geometry_msgs::TwistStamped desired_vel;        //output
 
 // var for obstacle
-//sgeometry_msgs::PoseStamped obstacle_pose;
+geometry_msgs::PoseStamped obstacle_pose;
 
 
 mavros_msgs::State current_state;
 geometry_msgs::PoseStamped host_mocap;
 geometry_msgs::PoseStamped initial_pose;
-
-
-class CBF_object
-{
-private:
-    geometry_msgs::PoseStamped pose;
-    ros::Subscriber pose_sub;
-public:
-    CBF_object(ros::NodeHandle nh, string subTopic);
-    void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
-    geometry_msgs::PoseStamped getPose();
-};
-
-CBF_object::CBF_object(ros::NodeHandle nh, string subTopic)
-{
-    pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(subTopic, 10, &CBF_object::pose_cb, this);
-}
-
-void CBF_object::pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
-{
-    pose = *msg;
-}
-
-geometry_msgs::PoseStamped CBF_object::getPose()
-{
-    return pose;
-}
 
 void bound_yaw(double* yaw){
         if(*yaw>M_PI)
@@ -94,6 +67,10 @@ void host_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
         host_mocap.pose.orientation.z,
         host_mocap.pose.orientation.w);
     tf::Matrix3x3(Q).getRPY(roll,pitch,yaw);
+}
+
+void obstacle_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
+    obstacle_pose = *msg;
 }
 
 void desired_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
@@ -162,11 +139,7 @@ void follow(geometry_msgs::PoseStamped desired_pose,double desired_yaw, geometry
     desired_vel->twist.angular.z = uyaw;
 }
 
-int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::TwistStamped* desired_vel, CBF_object cbO[]){
-
-            double gamma, safe_D;
-            ros::param::get("gamma", gamma);
-            ros::param::get("safe_D", safe_D);
+int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::TwistStamped* desired_vel){
 
             //  std::cout << "obstacle exist";
             Eigen::SparseMatrix<double> hessian_Matrix;
@@ -185,16 +158,18 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             gradient << - desired_vel_raw.twist.linear.x , - desired_vel_raw.twist.linear.y;
 
             linearMatrix.resize(1,2);
-            linearMatrix.insert(0,0) = 2*(cbO[0].getPose().pose.position.x - host_mocap.pose.position.x );
-            linearMatrix.insert(0,1) = 2*(cbO[0].getPose().pose.position.y - host_mocap.pose.position.y );
+            linearMatrix.insert(0,0) = 2*(obstacle_pose.pose.position.x - host_mocap.pose.position.x );
+            linearMatrix.insert(0,1) = 2*(obstacle_pose.pose.position.y - host_mocap.pose.position.y );
 
             lowerBound.resize(1);
             lowerBound << -OsqpEigen::INFTY;
             upperBound.resize(1);
-            
+            double gamma, safe_D;
+            ros::param::get("gamma", gamma);
+            ros::param::get("safe_D", safe_D);
 
-            upperBound <<  gamma*(pow((cbO[0].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
-            pow((cbO[0].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
+            upperBound <<  gamma*(pow((obstacle_pose.pose.position.x - host_mocap.pose.position.x ),2)+
+            pow((obstacle_pose.pose.position.y - host_mocap.pose.position.y ),2)-
             pow( safe_D ,2)
             );
 
@@ -253,6 +228,7 @@ int main(int argc, char **argv)
     
     ros::Subscriber desired_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>("desired_pose", 10, desired_pose_cb);
     ros::Subscriber desired_velocity_sub = nh.subscribe<geometry_msgs::TwistStamped>("desired_velocity_raw", 10, desired_vel_cb);
+    ros::Subscriber obstacle_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/obstacle/pose", 10, obstacle_pose_cb);
     
     ros::Subscriber uav_start_sub = nh.subscribe<std_msgs::Int32>("/uav_start", 10, start_cb);
     ros::Subscriber uav_killer_sub = nh.subscribe<std_msgs::Int32>("/uav_kill", 10, kill_cb);
@@ -262,12 +238,6 @@ int main(int argc, char **argv)
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
     ros::Rate rate(100);
-
-    CBF_object cbO[5] = {CBF_object(nh, "/vrpn_client_node/obstacle/pose"),
-                         CBF_object(nh, "/vrpn_client_node/MAV1/pose"),
-                         CBF_object(nh, "/vrpn_client_node/MAV2/pose"),
-                         CBF_object(nh, "/vrpn_client_node/MAV3/pose"),
-                         CBF_object(nh, "/vrpn_client_node/MAV4/pose")};
 
     ROS_INFO("Wait for pose and desired input init");
     while (ros::ok() && (!desired_input_init || !pose_init)) {
@@ -355,8 +325,8 @@ int main(int argc, char **argv)
         //ROS_INFO("origin input:vx: %f vy: %f \n",desired_vel.twist.linear.x,desired_vel.twist.linear.y); 
          
         //is_obstacle_exit
-        if(( ros::Time::now() - cbO[0].getPose().header.stamp)<ros::Duration(0.5)){
-            if(velocity_cbf( desired_vel_raw , &desired_vel, cbO)!=0){
+        if(( ros::Time::now() - obstacle_pose.header.stamp)<ros::Duration(0.5)){
+            if(velocity_cbf( desired_vel_raw , &desired_vel )!=0){
                 desired_vel = desired_vel_raw;
             }
             //  ROS_INFO("cbf input:vx: %f vy: %f \n",desired_vel.twist.linear.x,desired_vel.twist.linear.y); 
@@ -373,6 +343,3 @@ int main(int argc, char **argv)
     }
     return 0;
 }
-
-
-

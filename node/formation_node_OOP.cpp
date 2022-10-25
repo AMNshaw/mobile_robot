@@ -30,18 +30,16 @@ ros::param::get("ID", UAV_ID);
 class Mav
 {
 private:
-    ros::NodeHandle nh;
     geometry_msgs::PoseStamped MAV_pose;
     ros::Subscriber mav_sub;
     ros::Publisher desired_vel_pub;
 public:
-    Mav(ros::NodeHandle n, string subTopic);
+    Mav(ros::NodeHandle nh, string subTopic);
     void mav_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
 };
 
-Mav::Mav(ros::NodeHandle n, string subTopic)
+Mav::Mav(ros::NodeHandle nh, string subTopic)
 {
-    nh = n;
     mav_sub = nh.subscribe<geometry_msgs::PoseStamped>(subTopic, 10, &Mav::mav_cb, this);
 }
 

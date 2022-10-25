@@ -71,9 +71,9 @@ geometry_msgs::PoseStamped CBF_object::getPose()
 
 void bound_yaw(double* yaw){
         if(*yaw>M_PI)
-            *yaw = *yaw - 2*M_PI;
+        	*yaw = *yaw - 2*M_PI;
         else if(*yaw<-M_PI)
-            *yaw = *yaw + 2*M_PI;
+        	*yaw = *yaw + 2*M_PI;
 }
 
 void state_cb(const mavros_msgs::State::ConstPtr& msg) {
@@ -164,10 +164,6 @@ void follow(geometry_msgs::PoseStamped desired_pose,double desired_yaw, geometry
 
 int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::TwistStamped* desired_vel, CBF_object cbO[]){
 
-            double gamma, safe_D;
-            ros::param::get("gamma", gamma);
-            ros::param::get("safe_D", safe_D);
-
             //  std::cout << "obstacle exist";
             Eigen::SparseMatrix<double> hessian_Matrix;
             Eigen::VectorXd gradient;
@@ -191,7 +187,9 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             lowerBound.resize(1);
             lowerBound << -OsqpEigen::INFTY;
             upperBound.resize(1);
-            
+            double gamma, safe_D;
+            ros::param::get("gamma", gamma);
+            ros::param::get("safe_D", safe_D);
 
             upperBound <<  gamma*(pow((cbO[0].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
             pow((cbO[0].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
@@ -241,9 +239,9 @@ int main(int argc, char **argv)
     string use_input_s;
     if(private_nh.getParam("use_input", use_input_s) == false) {
        ROS_FATAL("No use_input is assigned.");
-       //exit(0);
+	   //exit(0);
        use_input_s = "position";
-    }   
+    }	
     std::cout<< use_input_s << "\n";
     string MAV_self_topic;
     ros::param::get("sub_topic", MAV_self_topic);
@@ -281,7 +279,7 @@ int main(int argc, char **argv)
     while (ros::ok() && !current_state.connected) {
         ros::spinOnce();
         rate.sleep();
-        ROS_INFO("Wait for FCU");
+    	ROS_INFO("Wait for FCU");
     }
     ROS_INFO("FCU connected");
 
@@ -292,7 +290,7 @@ int main(int argc, char **argv)
         }
         ros::spinOnce();
         rate.sleep();
-        ROS_INFO("Wait for UAV all start signal");
+    	ROS_INFO("Wait for UAV all start signal");
     }
     ROS_INFO("get UAV all start signal");
 
@@ -311,7 +309,7 @@ int main(int argc, char **argv)
     ros::Time last_request = ros::Time::now();
     
     if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent) {
-        ROS_INFO("Offboard enabled");
+    	ROS_INFO("Offboard enabled");
     }
 
     if( arming_client.call(arm_cmd) && arm_cmd.response.success) {
