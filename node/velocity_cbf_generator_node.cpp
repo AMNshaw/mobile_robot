@@ -36,9 +36,6 @@ geometry_msgs::TwistStamped desired_vel;        //output
 
 // var for obstacle
 //sgeometry_msgs::PoseStamped obstacle_pose;
-int cbf_num = 5;
-
-
 mavros_msgs::State current_state;
 geometry_msgs::PoseStamped host_mocap;
 geometry_msgs::PoseStamped initial_pose;
@@ -49,25 +46,34 @@ class CBF_object
 private:
     geometry_msgs::PoseStamped pose;
     ros::Subscriber pose_sub;
+    bool exist;
 public:
     CBF_object(ros::NodeHandle nh, string subTopic);
     void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     geometry_msgs::PoseStamped getPose();
+    bool getExist();
 };
 
 CBF_object::CBF_object(ros::NodeHandle nh, string subTopic)
 {
     pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(subTopic, 10, &CBF_object::pose_cb, this);
+    exist = false;
 }
 
 void CBF_object::pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     pose = *msg;
+    exist = true;
 }
 
 geometry_msgs::PoseStamped CBF_object::getPose()
 {
     return pose;
+}
+
+bool CBF_object::getExist()
+{
+    return exist;
 }
 
 void bound_yaw(double* yaw){
@@ -184,37 +190,64 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
 
             gradient.resize(2);
             gradient << - desired_vel_raw.twist.linear.x , - desired_vel_raw.twist.linear.y;
+	   
 
 
+	    int cbf_num = 0;
+	    for(int i = 0; i < 5; i++)
+	    {
+	        if(cbO[i].getExist() == true)
+			cbf_num++;
+	    }
+	    
+            upperBound.resize(cbf_num-1);
+            lowerBound.resize(cbf_num-1);
             linearMatrix.resize(cbf_num-1,2);
+
             int j = 0;
-            for(int i = 0; i < cbf_num; i++)
+            for(int i = 0; i < 5; i++)
             {
-                if(i != uav_id)
+                if(i != uav_id && cbO[i].getExist() == true)
                 {
                     linearMatrix.insert(j,0) = 2*(cbO[i].getPose().pose.position.x - host_mocap.pose.position.x );
                     linearMatrix.insert(j,1) = 2*(cbO[i].getPose().pose.position.y - host_mocap.pose.position.y );
-                    j++;
+            	    upperBound(j) = gamma*(pow((cbO[i].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
+           			 pow((cbO[i].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
+            			 pow( safe_D ,2));
+		    lowerBound(j) = -OsqpEigen::INFTY;
+
+		    j++;
                 }   
             }
-            
-
-            lowerBound.resize(1);
-            lowerBound << -OsqpEigen::INFTY;
-            upperBound.resize(1);
-            
-
-            upperBound <<  gamma*(pow((cbO[0].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
+/*
+            upperBound.resize(2);
+            lowerBound.resize(2);
+            linearMatrix.resize(2,2);
+	    linearMatrix.insert(0,0) = 2*(cbO[0].getPose().pose.position.x - host_mocap.pose.position.x );
+            linearMatrix.insert(0,1) = 2*(cbO[0].getPose().pose.position.y - host_mocap.pose.position.y );
+	    upperBound(0) = gamma*(pow((cbO[0].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
             pow((cbO[0].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
-            pow( safe_D ,2)
-            );
+	    pow( safe_D ,2));
+	    lowerBound(0) = -OsqpEigen::INFTY;
+
+
+	    linearMatrix.insert(1,0) = 2*(cbO[1].getPose().pose.position.x - host_mocap.pose.position.x );
+            linearMatrix.insert(1,1) = 2*(cbO[1].getPose().pose.position.y - host_mocap.pose.position.y );
+	    upperBound(1) = gamma*(pow((cbO[1].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
+            pow((cbO[1].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
+	    pow( safe_D ,2));
+	    lowerBound(1) = -OsqpEigen::INFTY;
+*/	    
+	    std::cout << "upperBound" << std::endl << upperBound << std::endl;
+	    std::cout << "LowerBound" << std::endl <<lowerBound << std::endl;
+	    std::cout << "LinearMatrix" << std::endl << linearMatrix << std::endl;
 
             OsqpEigen::Solver solver;
             solver.settings()->setWarmStart(true);
             solver.settings()->setVerbosity(false);
 
             solver.data()->setNumberOfVariables(2);
-            solver.data()->setNumberOfConstraints(1);
+            solver.data()->setNumberOfConstraints(cbf_num-1);
 
             if(!solver.data()->setHessianMatrix(hessian_Matrix)) return 1;
             if(!solver.data()->setGradient(gradient)) return 1;
