@@ -1,7 +1,7 @@
 <launch>
     <group ns="MAV2">
 	<param name="UAV_ID" value="2"/>
-	<param name="safe_D" value="0.6"/>
+	<param name="safe_D" value="0.45"/>
 	<param name="gamma" value="0.8"/>
 	<rosparam param="laplacian">
                         [1,0,0,0,0,
