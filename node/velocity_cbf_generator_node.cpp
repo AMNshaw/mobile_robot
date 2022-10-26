@@ -36,6 +36,7 @@ geometry_msgs::TwistStamped desired_vel;        //output
 
 // var for obstacle
 //sgeometry_msgs::PoseStamped obstacle_pose;
+int cbf_num = 5;
 
 
 mavros_msgs::State current_state;
@@ -184,9 +185,19 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             gradient.resize(2);
             gradient << - desired_vel_raw.twist.linear.x , - desired_vel_raw.twist.linear.y;
 
-            linearMatrix.resize(1,2);
-            linearMatrix.insert(0,0) = 2*(cbO[0].getPose().pose.position.x - host_mocap.pose.position.x );
-            linearMatrix.insert(0,1) = 2*(cbO[0].getPose().pose.position.y - host_mocap.pose.position.y );
+
+            linearMatrix.resize(cbf_num-1,2);
+            int j = 0;
+            for(int i = 0; i < cbf_num; i++)
+            {
+                if(i != uav_id)
+                {
+                    linearMatrix.insert(j,0) = 2*(cbO[i].getPose().pose.position.x - host_mocap.pose.position.x );
+                    linearMatrix.insert(j,1) = 2*(cbO[i].getPose().pose.position.y - host_mocap.pose.position.y );
+                    j++;
+                }   
+            }
+            
 
             lowerBound.resize(1);
             lowerBound << -OsqpEigen::INFTY;
