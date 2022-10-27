@@ -197,7 +197,10 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
 	    for(int i = 0; i < 5; i++)
 	    {
 	        if(cbO[i].getExist() == true)
-			cbf_num++;
+            {
+		      cbf_num++;
+              std::cout << "cbO" << i << "exist" << std::endl;
+            }
 	    }
 	    
             upperBound.resize(cbf_num-1);
