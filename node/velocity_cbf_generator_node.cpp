@@ -15,7 +15,6 @@
 
 using namespace std;
 
-int uav_id;
 bool desired_input_init = false;
 bool pose_init = false;
 
@@ -40,7 +39,6 @@ mavros_msgs::State current_state;
 geometry_msgs::PoseStamped host_mocap;
 geometry_msgs::PoseStamped initial_pose;
 
-
 class CBF_object
 {
 private:
@@ -52,7 +50,10 @@ public:
     void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     geometry_msgs::PoseStamped getPose();
     bool getExist();
+    static int self_id;
 };
+
+int CBF_object::self_id = 0;
 
 CBF_object::CBF_object(ros::NodeHandle nh, string subTopic)
 {
@@ -175,7 +176,6 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             ros::param::get("gamma", gamma);
             ros::param::get("safe_D", safe_D);
 
-            //  std::cout << "obstacle exist";
             Eigen::SparseMatrix<double> hessian_Matrix;
             Eigen::VectorXd gradient;
             Eigen::SparseMatrix<double> linearMatrix;
@@ -191,26 +191,22 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
             gradient.resize(2);
             gradient << - desired_vel_raw.twist.linear.x , - desired_vel_raw.twist.linear.y;
 	   
-
-
 	    int cbf_num = 0;
 	    for(int i = 0; i < 5; i++)
 	    {
 	        if(cbO[i].getExist() == true)
-            {
 		      cbf_num++;
-              std::cout << "cbO" << i << "exist" << std::endl;
-            }
 	    }
-	    
+	   
+
+	   ////////////////////// cbf constraints ///////////////////////// 
             upperBound.resize(cbf_num-1);
             lowerBound.resize(cbf_num-1);
             linearMatrix.resize(cbf_num-1,2);
-
             int j = 0;
             for(int i = 0; i < 5; i++)
             {
-                if(i != uav_id && cbO[i].getExist() == true)
+                if(i != CBF_object::self_id && cbO[i].getExist() == true)
                 {
                     linearMatrix.insert(j,0) = 2*(cbO[i].getPose().pose.position.x - host_mocap.pose.position.x );
                     linearMatrix.insert(j,1) = 2*(cbO[i].getPose().pose.position.y - host_mocap.pose.position.y );
@@ -222,28 +218,6 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
 		    j++;
                 }   
             }
-/*
-            upperBound.resize(2);
-            lowerBound.resize(2);
-            linearMatrix.resize(2,2);
-	    linearMatrix.insert(0,0) = 2*(cbO[0].getPose().pose.position.x - host_mocap.pose.position.x );
-            linearMatrix.insert(0,1) = 2*(cbO[0].getPose().pose.position.y - host_mocap.pose.position.y );
-	    upperBound(0) = gamma*(pow((cbO[0].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
-            pow((cbO[0].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
-	    pow( safe_D ,2));
-	    lowerBound(0) = -OsqpEigen::INFTY;
-
-
-	    linearMatrix.insert(1,0) = 2*(cbO[1].getPose().pose.position.x - host_mocap.pose.position.x );
-            linearMatrix.insert(1,1) = 2*(cbO[1].getPose().pose.position.y - host_mocap.pose.position.y );
-	    upperBound(1) = gamma*(pow((cbO[1].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
-            pow((cbO[1].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
-	    pow( safe_D ,2));
-	    lowerBound(1) = -OsqpEigen::INFTY;
-*/	    
-	    std::cout << "upperBound" << std::endl << upperBound << std::endl;
-	    std::cout << "LowerBound" << std::endl <<lowerBound << std::endl;
-	    std::cout << "LinearMatrix" << std::endl << linearMatrix << std::endl;
 
             OsqpEigen::Solver solver;
             solver.settings()->setWarmStart(true);
@@ -278,12 +252,11 @@ void kill_cb(const std_msgs::Int32 msg){
 }
 int main(int argc, char **argv)
 {
-   
     //  ROS_initialize  //
     ros::init(argc, argv, "velocity_cbf");
     ros::NodeHandle nh,private_nh("~");
     
-    ros::param::get("ID", uav_id);
+    ros::param::get("UAV_ID", CBF_object::self_id);
 
     string use_input_s;
     if(private_nh.getParam("use_input", use_input_s) == false) {
