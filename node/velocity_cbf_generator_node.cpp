@@ -49,6 +49,7 @@ private:
     float gamma;
 public:
     CBF_object(ros::NodeHandle nh, string subTopic, float safe_D, float gm);
+    CBF_object(ros::NodeHandle nh, string subTopic);
     void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     geometry_msgs::PoseStamped getPose();
     bool getExist();
@@ -66,6 +67,11 @@ CBF_object::CBF_object(ros::NodeHandle nh, string subTopic, float safe_D, float 
     exist = false;
     safeDistance = safe_D;
     gamma = gm;
+}
+CBF_object::CBF_object(ros::NodeHandle nh, string subTopic)
+{
+    pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(subTopic, 10, &CBF_object::pose_cb, this);
+    exist = false;
 }
 
 void CBF_object::pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
@@ -199,8 +205,6 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
 	        if(cbO[i].getExist() == true)
 		      cbf_num++;
 	    }
-	   
-
 	   ////////////////////// cbf constraints ///////////////////////// 
             upperBound.resize(cbf_num-1);
             lowerBound.resize(cbf_num-1);
@@ -214,7 +218,7 @@ int velocity_cbf(geometry_msgs::TwistStamped desired_vel_raw,geometry_msgs::Twis
                     linearMatrix.insert(j,1) = 2*(cbO[i].getPose().pose.position.y - host_mocap.pose.position.y );
             	    upperBound(j) = cbO[i].getGamma()*(pow((cbO[i].getPose().pose.position.x - host_mocap.pose.position.x ),2)+
            			 pow((cbO[i].getPose().pose.position.y - host_mocap.pose.position.y ),2)-
-            			 pow( cbO[i].getSafeDistance() ,2));
+            			 pow(cbO[i].getSafeDistance(),2));
 		    lowerBound(j) = -OsqpEigen::INFTY;
 
 		    j++;
@@ -292,7 +296,7 @@ int main(int argc, char **argv)
     ros::param::get("MAV_safe_D", MAV_SafeDistance);
 
 
-    CBF_object cbO[5] = {CBF_object(nh, "/vrpn_client_node/obstacle/pose", obstacle_Gamma, obstacle_SafeDistance),
+    CBF_object cbO[5] = {CBF_object(nh, "/vrpn_client_node/obstacle/pose",obstacle_Gamma,obstacle_SafeDistance),
                          CBF_object(nh, "/vrpn_client_node/MAV1/pose", MAV_Gamma, MAV_SafeDistance),
                          CBF_object(nh, "/vrpn_client_node/MAV2/pose", MAV_Gamma, MAV_SafeDistance),
                          CBF_object(nh, "/vrpn_client_node/MAV3/pose", MAV_Gamma, MAV_SafeDistance),
