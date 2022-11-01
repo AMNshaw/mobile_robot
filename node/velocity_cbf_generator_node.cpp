@@ -297,10 +297,10 @@ int main(int argc, char **argv)
 
 
     CBF_object cbO[5] = {CBF_object(nh, "/vrpn_client_node/obstacle/pose",obstacle_Gamma,obstacle_SafeDistance),
-                         CBF_object(nh, "/vrpn_client_node/MAV1/pose", MAV_Gamma, MAV_SafeDistance),
-                         CBF_object(nh, "/vrpn_client_node/MAV2/pose", MAV_Gamma, MAV_SafeDistance),
-                         CBF_object(nh, "/vrpn_client_node/MAV3/pose", MAV_Gamma, MAV_SafeDistance),
-                         CBF_object(nh, "/vrpn_client_node/MAV4/pose", MAV_Gamma, MAV_SafeDistance)};
+                         CBF_object(nh, "/vrpn_client_node/MAV1/pose", MAV_SafeDistance, MAV_Gamma),
+                         CBF_object(nh, "/vrpn_client_node/MAV2/pose", MAV_SafeDistance, MAV_Gamma),
+                         CBF_object(nh, "/vrpn_client_node/MAV3/pose", MAV_SafeDistance, MAV_Gamma),
+                         CBF_object(nh, "/vrpn_client_node/MAV4/pose", MAV_SafeDistance, MAV_Gamma)};
 
     ROS_INFO("Wait for pose and desired input init");
     while (ros::ok() && (!desired_input_init || !pose_init)) {

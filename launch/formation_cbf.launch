@@ -10,7 +10,7 @@
                          1,1,0,0,0,
                          1,0,1,0,0,
                          1,1,0,1,0,
-                         1,0,0,0,1]</rosparam>
+                         1,1,0,0,1]</rosparam>
 	<param name="sub_topic" value="/vrpn_client_node/MAV4/pose"/>
 
         <include file="$(find mavros)/launch/px4.launch">
