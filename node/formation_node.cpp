@@ -27,8 +27,34 @@ double roll = 0, pitch = 0, yaw = 0;
 int UAV_ID;
 
 geometry_msgs::PoseStamped leader_pose;
-geometry_msgs::PoseStamped MAV_pose[5];
+//geometry_msgs::PoseStamped MAV_pose[5];
 
+class MAV
+{
+private:
+    geometry_msgs::PoseStamped MAV_pose;
+    ros::Subscriber pose_sub;
+
+public:
+    MAV(ros::NodeHandle nh, string subTopic);
+    void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
+    geometry_msgs::PoseStamped getPose();    
+};
+
+MAV::MAV(ros::NodeHandle nh, string subTopic)
+{
+    pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(subTopic, 10, &MAV::pose_cb, this);
+}
+
+void MAV::pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
+{
+    MAV_pose = *msg;
+}
+
+geometry_msgs::PoseStamped MAV::getPose(){return MAV_pose;}
+
+
+/*
 void leader_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
     //store odometry into global variable
     MAV_pose[0].header = msg->header;
@@ -59,7 +85,7 @@ void mav4_cb(const geometry_msgs::PoseStamped::ConstPtr& msg){
     MAV_pose[4].pose.position = msg->pose.position;
     MAV_pose[4].pose.orientation = msg->pose.orientation;
 }
-
+*/
 void laplacian_remap(XmlRpc::XmlRpcValue laplacian_param, bool laplacian_map[][5])
 {
     int k = 0;
@@ -84,11 +110,18 @@ int main(int argc, char **argv)
     ros::param::get("UAV_ID", UAV_ID);
 
     //Subscriber
+    /*
     ros::Subscriber leader_pose_sub = nh.subscribe<geometry_msgs::PoseStamped>("/leader_pose", 10,leader_pose_cb);    
     ros::Subscriber mav1_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV1/pose", 10, mav1_cb);
     ros::Subscriber mav2_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV2/pose", 10, mav2_cb);
     ros::Subscriber mav3_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV3/pose", 10, mav3_cb);
     ros::Subscriber mav4_sub = nh.subscribe<geometry_msgs::PoseStamped>("/vrpn_client_node/MAV4/pose", 10, mav4_cb);
+    */
+    MAV mav[5] = {MAV(nh, "/leader_pose"),
+                  MAV(nh, "/vrpn_client_node/MAV1/pose"),
+                  MAV(nh, "/vrpn_client_node/MAV2/pose"),
+                  MAV(nh, "/vrpn_client_node/MAV3/pose"),
+                  MAV(nh, "/vrpn_client_node/MAV4/pose")};
 
     //Publisher    
     ros::Publisher desired_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("desired_velocity_raw", 100);
@@ -134,9 +167,9 @@ int main(int argc, char **argv)
         desired_vel.twist.linear.z = 0;
         for(int i =0 ;i<5;i++){
             if(laplacian_map[UAV_ID][i] == 1){
-                desired_vel.twist.linear.x += MAV_pose[i].pose.position.x - MAV_pose[UAV_ID].pose.position.x + relative_map_x[UAV_ID][i] ;
-                desired_vel.twist.linear.y += MAV_pose[i].pose.position.y - MAV_pose[UAV_ID].pose.position.y + relative_map_y[UAV_ID][i] ;
-                desired_vel.twist.linear.z += MAV_pose[i].pose.position.z - MAV_pose[UAV_ID].pose.position.z;
+                desired_vel.twist.linear.x += mav[i].getPose().pose.position.x - mav[UAV_ID].getPose().pose.position.x + relative_map_x[UAV_ID][i] ;
+                desired_vel.twist.linear.y += mav[i].getPose().pose.position.y - mav[UAV_ID].getPose().pose.position.y + relative_map_y[UAV_ID][i] ;
+                desired_vel.twist.linear.z += mav[i].getPose().pose.position.z - mav[UAV_ID].getPose().pose.position.z;
             }
         }
         desired_vel_pub.publish(desired_vel);
