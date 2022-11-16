@@ -33,30 +33,38 @@ private:
     geometry_msgs::PoseStamped MAV_pose;
     ros::Subscriber pose_sub;
     queue<geometry_msgs::PoseStamped> pose_queue;
+    int id;
 
 public:
-    MAV(ros::NodeHandle nh, string subTopic);
+    MAV(ros::NodeHandle nh, string subTopic, int ID);
     void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     geometry_msgs::PoseStamped getPose();
-    static int UAV_ID;    
+    static int UAV_ID;
+    static int delay_step;    
 };
 
 int MAV::UAV_ID = 0;
+int MAV::delay_step = 0;
 
-MAV::MAV(ros::NodeHandle nh, string subTopic)
+MAV::MAV(ros::NodeHandle nh, string subTopic, int ID)
 {
     pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(subTopic, 10, &MAV::pose_cb, this);
+    id = ID;
 }
 
 void MAV::pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
-    pose_queue.push(*msg);
-    if(pose_queue.size() >= 1)
+    if(id != UAV_ID)
     {
-        MAV_pose = *msg;
-        pose_queue = queue<geometry_msgs::PoseStamped>();
+	pose_queue.push(*msg);
+	if(pose_queue.size() >= delay_step)
+	{
+	    MAV_pose = pose_queue.front();
+	    pose_queue = queue<geometry_msgs::PoseStamped>();
+	}
     }
-
+    else
+	MAV_pose = *msg;
 }
 
 geometry_msgs::PoseStamped MAV::getPose(){return MAV_pose;}
@@ -85,13 +93,14 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     ros::param::get("UAV_ID", MAV::UAV_ID);
+    ros::param::get("delay_step", MAV::delay_step);
 
     //Subscriber
-    MAV mav[5] = {MAV(nh, "/leader_pose"),
-                  MAV(nh, "/vrpn_client_node/MAV1/pose"),
-                  MAV(nh, "/vrpn_client_node/MAV2/pose"),
-                  MAV(nh, "/vrpn_client_node/MAV3/pose"),
-                  MAV(nh, "/vrpn_client_node/MAV4/pose")};
+    MAV mav[5] = {MAV(nh, "/leader_pose", 0),
+                  MAV(nh, "/vrpn_client_node/MAV1/pose", 1),
+                  MAV(nh, "/vrpn_client_node/MAV2/pose", 2),
+                  MAV(nh, "/vrpn_client_node/MAV3/pose", 3),
+                  MAV(nh, "/vrpn_client_node/MAV4/pose", 4)};
 
     //Publisher    
     ros::Publisher desired_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("desired_velocity_raw", 100);

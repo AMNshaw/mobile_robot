@@ -11,6 +11,7 @@
 #include <geometry_msgs/Point.h>
 #include "OsqpEigen/OsqpEigen.h"
 #include <Eigen/Dense>
+#include <queue>
 #define gravity 9.806
 
 using namespace std;
@@ -47,26 +48,31 @@ private:
     bool exist;
     float safeDistance;
     float gamma;
+    int id;
+    queue<geometry_msgs::PoseStamped> pose_queue;
 public:
-    CBF_object(ros::NodeHandle nh, string subTopic, float safe_D, float gm);
+    CBF_object(ros::NodeHandle nh, string subTopic, float safe_D, float gm, int ID);
     CBF_object(ros::NodeHandle nh, string subTopic);
     void pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     geometry_msgs::PoseStamped getPose();
     bool getExist();
-    static int self_id;
     float getSafeDistance();
     float getGamma();
 
+    static int self_id;
+    static int delay_step;
 };
 
 int CBF_object::self_id = 0;
+int CBF_object::delay_step = 0;
 
-CBF_object::CBF_object(ros::NodeHandle nh, string subTopic, float safe_D, float gm)
+CBF_object::CBF_object(ros::NodeHandle nh, string subTopic, float safe_D, float gm, int ID)
 {
     pose_sub = nh.subscribe<geometry_msgs::PoseStamped>(subTopic, 10, &CBF_object::pose_cb, this);
     exist = false;
     safeDistance = safe_D;
     gamma = gm;
+    id = ID;
 }
 CBF_object::CBF_object(ros::NodeHandle nh, string subTopic)
 {
@@ -76,8 +82,18 @@ CBF_object::CBF_object(ros::NodeHandle nh, string subTopic)
 
 void CBF_object::pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
-    pose = *msg;
     exist = true;
+    if(id != self_id)
+    {
+	pose_queue.push(*msg);
+	if(pose_queue.size() >= delay_step)
+	{	
+	    pose = pose_queue.front();
+	    pose_queue = queue<geometry_msgs::PoseStamped>();
+	}
+    }
+    else
+	pose = *msg;
 }
 
 geometry_msgs::PoseStamped CBF_object::getPose(){return pose;}
@@ -263,6 +279,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh,private_nh("~");
     
     ros::param::get("UAV_ID", CBF_object::self_id);
+    ros::param::get("delay_step", CBF_object::delay_step);
 
     string use_input_s;
     if(private_nh.getParam("use_input", use_input_s) == false) {
@@ -296,11 +313,11 @@ int main(int argc, char **argv)
     ros::param::get("MAV_safe_D", MAV_SafeDistance);
 
 
-    CBF_object cbO[5] = {CBF_object(nh, "/vrpn_client_node/obstacle/pose",obstacle_SafeDistance, obstacle_Gamma),
-                         CBF_object(nh, "/vrpn_client_node/MAV1/pose", MAV_SafeDistance, MAV_Gamma),
-                         CBF_object(nh, "/vrpn_client_node/MAV2/pose", MAV_SafeDistance, MAV_Gamma),
-                         CBF_object(nh, "/vrpn_client_node/MAV3/pose", MAV_SafeDistance, MAV_Gamma),
-                         CBF_object(nh, "/vrpn_client_node/MAV4/pose", MAV_SafeDistance, MAV_Gamma)};
+    CBF_object cbO[5] = {CBF_object(nh, "/vrpn_client_node/obstacle/pose",obstacle_SafeDistance, obstacle_Gamma, 0),
+                         CBF_object(nh, "/vrpn_client_node/MAV1/pose", MAV_SafeDistance, MAV_Gamma, 1),
+                         CBF_object(nh, "/vrpn_client_node/MAV2/pose", MAV_SafeDistance, MAV_Gamma, 2),
+                         CBF_object(nh, "/vrpn_client_node/MAV3/pose", MAV_SafeDistance, MAV_Gamma, 3),
+                         CBF_object(nh, "/vrpn_client_node/MAV4/pose", MAV_SafeDistance, MAV_Gamma, 4)};
 
     ROS_INFO("Wait for pose and desired input init");
     while (ros::ok() && (!desired_input_init || !pose_init)) {

@@ -1,17 +1,18 @@
 <launch>
-    <group ns="MAV1">
-	<param name="UAV_ID" value="1"/>
-	<param name="obs_safe_D" value="0.45"/>
+    <group ns="MAV2">
+	<param name="UAV_ID" value="2"/>
+	<param name="obs_safe_D" value="0.6"/>
 	<param name="obs_gamma" value="0.8"/>
-    <param name="MAV_safe_D" value="0.45"/>
-    <param name="MAV_gamma" value="0.8"/>
+    	<param name="MAV_safe_D" value="0.6"/>
+    	<param name="MAV_gamma" value="0.8"/>
+    	<param name="delay_step" value="12"/>
 	<rosparam param="laplacian">
                         [1,0,0,0,0,
                          1,1,0,0,0,
                          1,0,1,0,0,
                          1,1,0,1,0,
                          1,1,0,0,1]</rosparam>
-	<param name="sub_topic" value="/vrpn_client_node/MAV1/pose"/>
+	<param name="sub_topic" value="/vrpn_client_node/MAV2/pose"/>
 
         <include file="$(find mavros)/launch/px4.launch">
         </include>
