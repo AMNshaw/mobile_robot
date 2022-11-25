@@ -149,8 +149,6 @@ int main(int argc, char **argv)
                 desired_vel.twist.linear.x += mav[i].getPose().pose.position.x - mav[MAV::UAV_ID].getPose().pose.position.x + relative_map_x[MAV::UAV_ID][i] ;
                 desired_vel.twist.linear.y += mav[i].getPose().pose.position.y - mav[MAV::UAV_ID].getPose().pose.position.y + relative_map_y[MAV::UAV_ID][i] ;
                 desired_vel.twist.linear.z += mav[i].getPose().pose.position.z - mav[MAV::UAV_ID].getPose().pose.position.z;
-                desired_vel.twist.angular.z = M_PI/2;
-
             }
         }
         desired_vel_pub.publish(desired_vel);
