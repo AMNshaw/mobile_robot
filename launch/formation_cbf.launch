@@ -5,7 +5,7 @@
 	<param name="obs_gamma" value="0.8"/>
     	<param name="MAV_safe_D" value="0.6"/>
     	<param name="MAV_gamma" value="0.8"/>
-    	<param name="delay_step" value="12"/>
+    	<param name="delay_step" value="0"/>
 	<rosparam param="laplacian">
                         [1,0,0,0,0,
                          1,1,0,0,0,
