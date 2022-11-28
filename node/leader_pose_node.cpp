@@ -121,8 +121,11 @@ void leader_pose_generate(geometry_msgs::PoseStamped *leader_pose){
 		trajectory_t += 1/CONTROL_HZ;
 		if(abs(leader_pose->pose.position.x -wayPoint_x_final) > 0.01 || abs(leader_pose->pose.position.y - wayPoint_y_final) > 0.01)
 		{
-					leader_pose->pose.position.x = wayPoint_x_initial + (wayPoint_x_final - wayPoint_x_initial)*trajectory_t*0.3;
-					leader_pose->pose.position.y = wayPoint_y_initial + (wayPoint_y_final - wayPoint_y_initial)*trajectory_t*0.3;
+			float err_x = wayPoint_x_final - wayPoint_x_initial;
+			float err_y = wayPoint_y_final - wayPoint_y_initial;
+			float err_norm = sqrt(pow(err_x, 2) + pow(err_y, 2));	
+			leader_pose->pose.position.x = wayPoint_x_initial + err_x/err_norm*trajectory_t*0.3;
+			leader_pose->pose.position.y = wayPoint_y_initial + err_y/err_norm*trajectory_t*0.3;
 		}
 		else
 		{
@@ -140,7 +143,7 @@ void waypoint_cb(const geometry_msgs::Point::ConstPtr& msg)
         wayPoint_y_initial = leader_pose.pose.position.y;
 		
 		wayPoint_x_final = msg->x;
-		wayPoint_y_final = msg->x;
+		wayPoint_y_final = msg->y;
 	}
 
 	else 
