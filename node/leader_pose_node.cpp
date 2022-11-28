@@ -21,6 +21,7 @@ float wayPoint_x_initial;
 float wayPoint_y_initial;
 
 geometry_msgs::PoseStamped leader_pose;
+
 enum {
 	DISARM,
 	HOVERING,
@@ -118,14 +119,32 @@ void leader_pose_generate(geometry_msgs::PoseStamped *leader_pose){
 
 	if(leader_mode == WAYPOINT_FOLLOWING){
 		trajectory_t += 1/CONTROL_HZ;
-		//leader_pose->pose.position.x = cos(trajectory_t*0.3 + M_PI);
-		//leader_pose->pose.position.y = sin(trajectory_t*0.3 + M_PI);
-		leader_pose->pose.position.x = wayPoint_x_initial + (wayPoint_x_final - wayPoint_x_initial)*trajectory_t*0.3;
-		leader_pose->pose.position.y = wayPoint_y_initial + (wayPoint_y_final - wayPoint_y_initial)*trajectory_t*0.3;
+		if(abs(leader_pose->pose.position.x -wayPoint_x_final) > 0.01 || abs(leader_pose->pose.position.y - wayPoint_y_final) > 0.01)
+		{
+					leader_pose->pose.position.x = wayPoint_x_initial + (wayPoint_x_final - wayPoint_x_initial)*trajectory_t*0.3;
+					leader_pose->pose.position.y = wayPoint_y_initial + (wayPoint_y_final - wayPoint_y_initial)*trajectory_t*0.3;
+		}
+		else
+		{
+
+		}
+	}
+}
+
+void waypoint_cb(const geometry_msgs::Point::ConstPtr& msg)
+{
+	if(leader_mode == WAYPOINT_FOLLOWING)
+	{
+		trajectory_t = 0;
+		wayPoint_x_initial = leader_pose.pose.position.x;
+        wayPoint_y_initial = leader_pose.pose.position.y;
+		
+		wayPoint_x_final = msg->x;
+		wayPoint_y_final = msg->x;
 	}
 
-
-
+	else 
+		ROS_WARN("leader not in waypoint mode");
 }
 
 
@@ -135,11 +154,11 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "leader_pose_publisher");
 
   ros::NodeHandle nh;
-
-
   ros::Publisher leader_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/leader_pose", 10);
   ros::Publisher uav_killer_pub = nh.advertise<std_msgs::Int32>("/uav_kill", 10);
   ros::Publisher uav_start_pub = nh.advertise<std_msgs::Int32>("/uav_start", 10);
+  ros::Subscriber point_sub = nh.subscribe<geometry_msgs::Point>("/waypoint", 10, waypoint_cb);
+
   ros::Rate loop_rate(100);
   
   leader_pose.header.stamp = ros::Time::now();
@@ -152,7 +171,6 @@ int main(int argc, char **argv)
   leader_pose.pose.orientation.z = 0.0;
   leader_pose.pose.orientation.w = 1.0;
 
-  trajectory_t = 0;
 	ROS_INFO("(t):takeoff (l):land (e):start_trajectory (w):waypoint_mode (p):stop_trajectory (k):kill_all_drone (s):start_all_drone \n");
   while (ros::ok())
   {
@@ -173,8 +191,8 @@ int main(int argc, char **argv)
                 case 119:    // (w) start_wayPoint_following
                 	wayPoint_x_initial = leader_pose.pose.position.x;
                 	wayPoint_y_initial = leader_pose.pose.position.y;
-                	ROS_INFO("Please input waypoint (x, y)\n");
-                	std::cin >> wayPoint_x_final >> wayPoint_y_final;
+					wayPoint_x_final = leader_pose.pose.position.x;
+                	wayPoint_y_final = leader_pose.pose.position.y;
                     start_waypoint_following();
                     break;
                 case 112:    // (p) stop_trajectory_following
