@@ -35,6 +35,7 @@ enum {
     LAND,
     TRAJECTORY_FOLLOWING,
 	WAYPOINT_FOLLOWING,
+	TRACK_RED_POINT,
 }LeaderMode;
 
 int leader_mode;
@@ -100,6 +101,26 @@ void stop_waypoint(){
 	}
 }
 
+void start_track_red_point(){
+	if(leader_mode == HOVERING){
+    	leader_mode = TRACK_RED_POINT;
+		ROS_INFO("leader start tracking point");
+	}
+	else{
+		ROS_WARN("leader can not start tracking");
+	}
+}
+
+void stop_track_red_point(){
+	if(leader_mode == TRACK_RED_POINT){
+    	leader_mode = HOVERING;
+		ROS_INFO("leader stop tracking");
+	}
+	else{
+		ROS_WARN("leader not tracking");
+	}
+}
+
 void leader_pose_generate(geometry_msgs::PoseStamped *leader_pose){
 	if(leader_mode == TAKEOFF){
   		leader_pose->pose.position.z += TAKEOFF_SPEED/CONTROL_HZ;
@@ -123,7 +144,7 @@ void leader_pose_generate(geometry_msgs::PoseStamped *leader_pose){
 		leader_pose->pose.position.y = sin(trajectory_t*0.3 + M_PI);
 	}
 
-	if(leader_mode == WAYPOINT_FOLLOWING){
+	if(leader_mode == WAYPOINT_FOLLOWING || leader_mode == TRACK_RED_POINT){
 		trajectory_t += 1/CONTROL_HZ;
 		if(abs(leader_pose->pose.position.x -wayPoint_final.x) > 0.01 || abs(leader_pose->pose.position.y - wayPoint_final.y) > 0.01 || abs(leader_pose->pose.position.z - wayPoint_final.z) > 0.01 )
 		{
@@ -160,7 +181,19 @@ void waypoint_cb(const geometry_msgs::Point::ConstPtr& msg)
 		
 	}
 
-	else 
+	else if(leader_mode == TRACK_RED_POINT)
+	{
+		trajectory_t = 0;
+		if(msg->x > 1.5 || msg->y > 1.5)
+			ROS_WARN("Command out of bound");
+		else
+		{
+			wayPoint_initial = leader_pose.pose.position;
+			wayPoint_final.x = msg->x;
+			wayPoint_final.y = msg->y;
+		}
+	}
+	else
 		ROS_WARN("leader not in waypoint mode");
 }
 
@@ -188,7 +221,7 @@ int main(int argc, char **argv)
   leader_pose.pose.orientation.z = 0.0;
   leader_pose.pose.orientation.w = 1.0;
 
-	ROS_INFO("(t):takeoff (l):land (e):start_trajectory (w):waypoint_mode (p):stop_trajectory (k):kill_all_drone (s):start_all_drone \n");
+	ROS_INFO("(t):takeoff\n (l):land\n (e):start_trajectory\n (w):waypoint_mode\n (r):track_red_point\n (p):stop MAV\n (k):kill_all_drone\n (s):start_all_drone \n");
   while (ros::ok())
   {
         //keyboard control
@@ -210,11 +243,18 @@ int main(int argc, char **argv)
 					wayPoint_final = leader_pose.pose.position;
                     start_waypoint_following();
                     break;
+				case 114:    // (t) start_track_red_point
+                	wayPoint_initial = leader_pose.pose.position;
+					wayPoint_final = leader_pose.pose.position;
+                   	start_track_red_point();
+                    break;	
                 case 112:    // (p) stop_trajectory_following
                 	if(leader_mode == TRAJECTORY_FOLLOWING)
                     	stop_trajectory();
                     else if (leader_mode == WAYPOINT_FOLLOWING)
                     	stop_waypoint();
+					else if (leader_mode == TRACK_RED_POINT)
+						stop_track_red_point();
                     break;
                 case 107:    // (k) uav_kill
 					kill_all_drone = 1;
