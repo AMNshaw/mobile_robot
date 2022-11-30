@@ -15,12 +15,18 @@
 #define CONTROL_HZ 100.0f
 
 float trajectory_t; 
+/*
 float wayPoint_x_final = 0.0;
 float wayPoint_y_final = 0.0;
 float wayPoint_x_initial;
 float wayPoint_y_initial;
+*/
 
 geometry_msgs::PoseStamped leader_pose;
+geometry_msgs::Point wayPoint_final;
+geometry_msgs::Point wayPoint_initial;
+
+
 
 enum {
 	DISARM,
@@ -119,13 +125,18 @@ void leader_pose_generate(geometry_msgs::PoseStamped *leader_pose){
 
 	if(leader_mode == WAYPOINT_FOLLOWING){
 		trajectory_t += 1/CONTROL_HZ;
-		if(abs(leader_pose->pose.position.x -wayPoint_x_final) > 0.01 || abs(leader_pose->pose.position.y - wayPoint_y_final) > 0.01)
+		if(abs(leader_pose->pose.position.x -wayPoint_final.x) > 0.01 || abs(leader_pose->pose.position.y - wayPoint_final.y) > 0.01 || abs(leader_pose->pose.position.z - wayPoint_final.z) > 0.01 )
 		{
-			float err_x = wayPoint_x_final - wayPoint_x_initial;
-			float err_y = wayPoint_y_final - wayPoint_y_initial;
-			float err_norm = sqrt(pow(err_x, 2) + pow(err_y, 2));	
-			leader_pose->pose.position.x = wayPoint_x_initial + err_x/err_norm*trajectory_t*0.3;
-			leader_pose->pose.position.y = wayPoint_y_initial + err_y/err_norm*trajectory_t*0.3;
+			geometry_msgs::Point err;
+			err.x  = wayPoint_final.x - wayPoint_initial.x;
+			err.y  = wayPoint_final.y - wayPoint_initial.y;
+			err.z  = wayPoint_final.z - wayPoint_initial.z;
+		
+			float err_norm = sqrt(pow(err.x, 2) + pow(err.y, 2) + pow(err.z, 2));	
+			leader_pose->pose.position.x = wayPoint_initial.x + err.x/err_norm*trajectory_t*0.3;
+			leader_pose->pose.position.y = wayPoint_initial.y + err.y/err_norm*trajectory_t*0.3;
+			leader_pose->pose.position.z = wayPoint_initial.z + err.z/err_norm*trajectory_t*0.3;
+
 		}
 		else
 		{
@@ -139,11 +150,14 @@ void waypoint_cb(const geometry_msgs::Point::ConstPtr& msg)
 	if(leader_mode == WAYPOINT_FOLLOWING)
 	{
 		trajectory_t = 0;
-		wayPoint_x_initial = leader_pose.pose.position.x;
-        wayPoint_y_initial = leader_pose.pose.position.y;
+		if(msg->x > 1.5 || msg->y > 1.5 || msg->z > 2)
+			ROS_WARN("Command out of bound");
+		else
+		{
+			wayPoint_initial = leader_pose.pose.position;
+			wayPoint_final = *msg;		
+		}
 		
-		wayPoint_x_final = msg->x;
-		wayPoint_y_final = msg->y;
 	}
 
 	else 
@@ -192,10 +206,8 @@ int main(int argc, char **argv)
                     start_trajectory_following();
                     break;
                 case 119:    // (w) start_wayPoint_following
-                	wayPoint_x_initial = leader_pose.pose.position.x;
-                	wayPoint_y_initial = leader_pose.pose.position.y;
-					wayPoint_x_final = leader_pose.pose.position.x;
-                	wayPoint_y_final = leader_pose.pose.position.y;
+                	wayPoint_initial = leader_pose.pose.position;
+					wayPoint_final = leader_pose.pose.position;
                     start_waypoint_following();
                     break;
                 case 112:    // (p) stop_trajectory_following
