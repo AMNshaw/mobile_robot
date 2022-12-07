@@ -17,18 +17,16 @@ private:
     ros::Subscriber aprilTag_pos_sub;
     float distance_track;
     float distance_safe;
-    float gamma_track;
-    float gamma_safe;
+    float gamma;
 
 public:
     CBF();
     CBF(ros::NodeHandle nh, string aprilTag_subTopic);
     void aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
-    void setCBFparam(float dis_t, float dis_s, float gamma_t, float gamma_s);
+    void setCBFparam(float dis_t, float dis_s, float gamma);
     float getTrackDistance();
     float getSafeDistance();
-    float getGamma_safe();
-    float getGamma_track();
+    float getGamma();
     geometry_msgs::PoseStamped getTagPose();
 
     int QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel);
@@ -37,7 +35,7 @@ public:
 CBF::CBF(ros::NodeHandle nh, string aprilTag_subTopic)
 {
     aprilTag_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(aprilTag_subTopic, 10, &CBF::aprilTag_pose_cb, this);
-    distance_safe = distance_track = gamma_safe = gamma_track = 0.5;
+    distance_safe = distance_track = gamma = 0.5;
 }
 
 void CBF::aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
@@ -45,18 +43,17 @@ void CBF::aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
     aprilTag_pos = *msg;
 }
 
-void CBF::setCBFparam(float dis_t, float dis_s, float gamma_t, float gamma_s)
+void CBF::setCBFparam(float dis_t, float dis_s, float gm)
 {
     distance_track = dis_t;
     distance_safe = dis_s;
-    gamma_safe = gamma_s;
-    gamma_track = gamma_t;
+    gamma = gm;
+
 }
 
 float CBF::getTrackDistance(){ return distance_track;}
 float CBF::getSafeDistance(){ return distance_safe;}
-float CBF::getGamma_track(){ return gamma_track;}
-float CBF::getGamma_safe(){ return gamma_safe;}
+float CBF::getGamma(){ return gamma;}
 geometry_msgs::PoseStamped CBF::getTagPose(){ return aprilTag_pos;}
 
 int CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel)
@@ -82,10 +79,10 @@ int CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs:
 
     linearMatrix.insert(0, 0) = 2*(self_pos.pose.position.x - aprilTag_pos.pose.position.x);
     linearMatrix.insert(0, 1) = 2*(self_pos.pose.position.y - aprilTag_pos.pose.position.y);
-    upperBound(0) = gamma_track*(pow(distance_track, 2)
+    upperBound(0) = gamma*(pow(distance_track, 2)
                                 -pow(self_pos.pose.position.x - aprilTag_pos.pose.position.x, 2)
                                 -pow(self_pos.pose.position.y - aprilTag_pos.pose.position.y, 2));
-    lowerBound(0) = -gamma_safe*(pow(self_pos.pose.position.x - aprilTag_pos.pose.position.x, 2)
+    lowerBound(0) = -gamma*(pow(self_pos.pose.position.x - aprilTag_pos.pose.position.x, 2)
                                 +pow(self_pos.pose.position.y - aprilTag_pos.pose.position.y, 2)
                                 -pow(distance_safe, 2));
 
@@ -124,7 +121,7 @@ int main(int argc, char** argv)
     ros::Rate rate(100);
 
     CBF cbf(nh, "/aprilTag_pos");
-    cbf.setCBFparam(0.5, 0.5, 0.5, 0.5);
+    cbf.setCBFparam(0.3, 0.2, 1.0);
     geometry_msgs::TwistStamped desired_vel;
     geometry_msgs::TwistStamped desired_vel_raw;
     desired_vel.twist.linear.x = 0;
@@ -132,8 +129,11 @@ int main(int argc, char** argv)
     desired_vel_raw.twist.linear.x = 0;
     desired_vel_raw.twist.linear.y = 0;
 
+    
     while(ros::ok())
     {
+        cbf.QPsolve_vel(desired_vel_raw , &desired_vel);
+        /*
         if((ros::Time::now() - cbf.getTagPose().header.stamp)<ros::Duration(0.5))
         {
             if(cbf.QPsolve_vel(desired_vel_raw , &desired_vel)!=0){
@@ -147,9 +147,12 @@ int main(int argc, char** argv)
         }
         
         local_vel_pub.publish(desired_vel);
-
+        */
         ros::spinOnce();
         rate.sleep();
+        
+        cout << desired_vel << endl;
     }
+    
     return 0;
 }
