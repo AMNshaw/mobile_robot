@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(flight_control)
+project(mobile_robot)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
  add_compile_options(-std=c++17)
@@ -199,42 +199,27 @@ target_link_libraries(attitude_compute
 
 #velocity_cbf_generator
 add_executable(velocity_cbf_generator 
-	node/velocity_cbf_generator_node.cpp 
-	src/getch.cpp )
+	node/velocity_cbf_generator_node.cpp )
 target_link_libraries(velocity_cbf_generator 
 	${catkin_LIBRARIES} 
 	OsqpEigen::OsqpEigen )
 target_include_directories(velocity_cbf_generator PRIVATE
 	include/${PROJECT_NAME}/ )
 
-#		keyboard_panel
-add_executable(keyboard_panel 
-	node/keyboard_panel_node.cpp
-    src/getch.cpp)
-target_link_libraries(keyboard_panel
-	${catkin_LIBRARIES} )
-target_include_directories(keyboard_panel PRIVATE
-	include/${PROJECT_NAME}/ )
+  #velocity_cbf_generator
+add_executable(velocity_cbf_node
+node/velocity_cbf_node.cpp )
+target_link_libraries(velocity_cbf_node
+${catkin_LIBRARIES} 
+OsqpEigen::OsqpEigen )
+target_include_directories(velocity_cbf_node PRIVATE
+include/${PROJECT_NAME}/ )
 
 #		topic_tool
 add_executable(topic_tool src/topic_tool.cpp)
 target_link_libraries(topic_tool
 	${catkin_LIBRARIES} )
 
-#		leader_pose
-add_executable(leader_pose node/leader_pose_node.cpp
-	src/getch.cpp)
-target_link_libraries(leader_pose
-	${catkin_LIBRARIES} )
-target_include_directories(leader_pose PRIVATE
-	include/${PROJECT_NAME}/ )
-
-#		formation
-add_executable(formation node/formation_node.cpp)
-target_link_libraries(formation
-	${catkin_LIBRARIES} )
-target_include_directories(formation PRIVATE
-	include/${PROJECT_NAME}/ )
 #############
 ## Install ##
 #############

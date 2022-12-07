@@ -5,7 +5,6 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <std_msgs/Int32.h>
-#include "getch.h"
 #include <cmath>
 #include <tf/tf.h>
 #include <geometry_msgs/Point.h>

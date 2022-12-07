@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>flight_control</name>
+  <name>mobile_robot</name>
   <version>0.0.0</version>
-  <description>The flight_control package</description>
+  <description>The mobile_robot package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
