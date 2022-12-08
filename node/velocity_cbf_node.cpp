@@ -121,7 +121,7 @@ int main(int argc, char** argv)
     ros::Rate rate(100);
 
     CBF cbf(nh, "/aprilTag_pos");
-    cbf.setCBFparam(0.3, 0.2, 1.0);
+    cbf.setCBFparam(0.3, 0.2, 0.6);
     geometry_msgs::TwistStamped desired_vel;
     geometry_msgs::TwistStamped desired_vel_raw;
     desired_vel.twist.linear.x = 0;
@@ -133,6 +133,21 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         cbf.QPsolve_vel(desired_vel_raw , &desired_vel);
+        /*
+        if((ros::Time::now() - cbf.getTagPose().header.stamp)<ros::Duration(0.5))
+        {
+            if(cbf.QPsolve_vel(desired_vel_raw , &desired_vel)!=0){
+                desired_vel = desired_vel_raw;
+            }
+            //  ROS_INFO("cbf input:vx: %f vy: %f \n",desired_vel.twist.linear.x,desired_vel.twist.linear.y); 
+
+        }
+        else{
+            desired_vel = desired_vel_raw;
+        }
+        
+        local_vel_pub.publish(desired_vel);
+        */
         ros::spinOnce();
         rate.sleep();
         

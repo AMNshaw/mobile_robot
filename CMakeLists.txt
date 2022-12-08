@@ -197,16 +197,7 @@ add_executable(attitude_compute src/attitude_compute.cpp)
 target_link_libraries(attitude_compute
   ${catkin_LIBRARIES} )
 
-#velocity_cbf_generator
-add_executable(velocity_cbf_generator 
-	node/velocity_cbf_generator_node.cpp )
-target_link_libraries(velocity_cbf_generator 
-	${catkin_LIBRARIES} 
-	OsqpEigen::OsqpEigen )
-target_include_directories(velocity_cbf_generator PRIVATE
-	include/${PROJECT_NAME}/ )
-
-  #velocity_cbf_generator
+#velocity_cbf_node
 add_executable(velocity_cbf_node
 node/velocity_cbf_node.cpp )
 target_link_libraries(velocity_cbf_node
