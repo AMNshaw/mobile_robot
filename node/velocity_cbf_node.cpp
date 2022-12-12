@@ -116,7 +116,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "velocity_cbf");
     ros::NodeHandle nh;
 
-    ros::Publisher local_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("cmd/vel", 2);
+    ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/track/vel", 2);
 
     ros::Rate rate(100);
 
@@ -133,25 +133,12 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         cbf.QPsolve_vel(desired_vel_raw , &desired_vel);
-        /*
-        if((ros::Time::now() - cbf.getTagPose().header.stamp)<ros::Duration(0.5))
-        {
-            if(cbf.QPsolve_vel(desired_vel_raw , &desired_vel)!=0){
-                desired_vel = desired_vel_raw;
-            }
-            //  ROS_INFO("cbf input:vx: %f vy: %f \n",desired_vel.twist.linear.x,desired_vel.twist.linear.y); 
+        cout << desired_vel << endl;
 
-        }
-        else{
-            desired_vel = desired_vel_raw;
-        }
-        
-        local_vel_pub.publish(desired_vel);
-        */
+        track_vel_pub.publish(desired_vel);
+
         ros::spinOnce();
         rate.sleep();
-        
-        cout << desired_vel << endl;
     }
     
     return 0;
