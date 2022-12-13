@@ -12,10 +12,11 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf
+  apriltag_ros
 )
 find_package(PythonLibs)
 find_package(OsqpEigen REQUIRED)
-#find_package(DJIOSDK REQUIRED)
+find_package(apriltag REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -149,55 +150,8 @@ set(HEADERS_ include/flight_control/jetsonConstants.h  include/flight_control/je
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/flight_control_node.cpp)
 
-add_executable(time_trigger src/time_trigger.cpp ${HEADERS_})
-target_link_libraries(time_trigger
-  ${catkin_LIBRARIES} 
-  jetson_tx2
-)
-
-add_executable(sync src/sync.cpp)
-target_link_libraries(sync
-	${catkin_LIBRARIES} 
-)
-
-add_executable(follow_test2 src/follow_test2.cpp)
-target_link_libraries(follow_test2 ${catkin_LIBRARIES})
-
-add_executable(vio src/vio.cpp)
-target_link_libraries(vio ${catkin_LIBRARIES} 
-	qp )
-
-add_executable(plot src/plot.cpp)
-target_link_libraries(plot
-  ${catkin_LIBRARIES} )
-
-#attitude_control
-add_executable(attitude_control src/attitude_control.cpp)
-target_link_libraries(attitude_control
-	${catkin_LIBRARIES} 
-	${PYTHON_LIBRARIES}
-	qp )
-
-#vio_trajectory
-add_executable(vio_trajectory src/vio_trajectory.cpp)
-target_link_libraries(vio_trajectory
-  ${catkin_LIBRARIES} 
-  ${PYTHON_LIBRARIES}
-    )
-
-#motive
-add_executable(motive src/motive.cpp)
-target_link_libraries(motive 
-	${catkin_LIBRARIES} )
-
-#attitude_compute
-add_executable(attitude_compute src/attitude_compute.cpp)
-target_link_libraries(attitude_compute
-  ${catkin_LIBRARIES} )
-
-#velocity_cbf_node
+# velocity_cbf_node
 add_executable(velocity_cbf_node
 node/velocity_cbf_node.cpp )
 target_link_libraries(velocity_cbf_node
@@ -206,10 +160,19 @@ OsqpEigen::OsqpEigen )
 target_include_directories(velocity_cbf_node PRIVATE
 include/${PROJECT_NAME}/ )
 
-#		topic_tool
-add_executable(topic_tool src/topic_tool.cpp)
-target_link_libraries(topic_tool
-	${catkin_LIBRARIES} )
+# motor_speed_generator
+add_executable(motor_speed_generator node/motor_speed_generator.cpp)
+target_link_libraries(motor_speed_generator ${catkin_LIBRARIES})
+
+# apriltag_detection
+add_executable(apriltag_detection node/apriltag_detection.cpp)
+target_link_libraries(apriltag_detection 
+${catkin_LIBRARIES}
+apriltag::apriltag)
+
+# lidar_scan
+add_executable(lidar_scan node/lidar_scan.cpp)
+target_link_libraries(lidar_scan ${catkin_LIBRARIES})
 
 #############
 ## Install ##
