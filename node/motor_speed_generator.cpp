@@ -3,6 +3,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Point.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 
@@ -20,7 +21,9 @@ private:
     float kp_omega;
     float kd_omega;
     geometry_msgs::TwistStamped desired_vel;
+    std_msgs::Float32MultiArray motorSpd;
     ros::Subscriber desired_vel_sub;
+
 public:
     Mobile();
     Mobile(ros::NodeHandle nh, string desired_vel_subTopic);
@@ -28,6 +31,7 @@ public:
     void setPdCtrlParam(float kp, float kd);
     void desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg);
     void computeWheelSpd();
+    std_msgs::Float32MultiArray getMotorSpd();
 };
 
 Mobile::Mobile(ros::NodeHandle nh, string desired_vel_subTopic)
@@ -56,10 +60,14 @@ void Mobile::computeWheelSpd()
 
     omega_L = (v_norm-omega_self*width/2)/wheelRadius;
     omega_R = (v_norm+omega_self*width/2)/wheelRadius;
+
+    motorSpd.data.push_back(omega_L);
+    motorSpd.data.push_back(omega_R);
 }
 
 void Mobile::setMobileParam(float w, float r){width = w; wheelRadius = r;}
-void Mobile::setPdCtrlParam(float kp, float kd){kp_omega = kp; kd_omega = kd;};
+void Mobile::setPdCtrlParam(float kp, float kd){kp_omega = kp; kd_omega = kd;}
+std_msgs::Float32MultiArray Mobile::getMotorSpd(){return motorSpd;}
 
 int main(int argc, char** argv)
 {
@@ -67,12 +75,15 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     ros::Rate rate(100);
 
+    ros::Publisher motorSpd_pub = nh.advertise<std_msgs::Float32MultiArray>("/motor_speed", 2);
+
     Mobile car(nh, "/cmd/vel");
-    car.setMobileParam(15, 0.0325);
+    car.setMobileParam(0.11, 0.0325);
     car.setPdCtrlParam(1, 1);
 
     while(ros::ok())
     {
+        motorSpd_pub.publish(car.getMotorSpd());
         ros::spinOnce();
         rate.sleep();
     }
