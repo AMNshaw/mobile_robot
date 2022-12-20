@@ -59,7 +59,10 @@ void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 void Mobile::computeWheelSpd()
 {
     float v_norm = sqrt(pow(desired_vel.twist.linear.x, 2) + pow(desired_vel.twist.linear.y, 2));
-    theta = acos(desired_vel.twist.linear.x/v_norm);
+    if(desired_vel.twist.linear.y >= 0)
+        theta = acos(desired_vel.twist.linear.x/v_norm);
+    else
+        theta = -acos(desired_vel.twist.linear.x/v_norm);
 
     // PD control of self spinning
     omega_self = kp_omega*theta;
@@ -87,7 +90,7 @@ int main(int argc, char** argv)
 
     Mobile car(nh, "/track/vel");
     car.setMobileParam(0.11, 0.0325);
-    car.setPdCtrlParam(1, 1);
+    car.setPdCtrlParam(0.1, 1);
 
     while(ros::ok())
     {
