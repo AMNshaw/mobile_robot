@@ -2,8 +2,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Point.h>
-#include <std_msgs/Int32.h>
-#include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Float64.h>
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 
@@ -21,7 +20,9 @@ private:
     float kp_omega;
     float kd_omega;
     geometry_msgs::TwistStamped desired_vel;
-    std_msgs::Float64MultiArray motorSpd;
+    float motorSpd[2];
+    std_msgs::Float64 motorSpd_R;
+    std_msgs::Float64 motorSpd_L;
     ros::Subscriber desired_vel_sub;
 
 public:
@@ -31,7 +32,8 @@ public:
     void setPdCtrlParam(float kp, float kd);
     void desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg);
     void computeWheelSpd();
-    std_msgs::Float64MultiArray getMotorSpd();
+    std_msgs::Float64 getMotorSpd_L();
+    std_msgs::Float64 getMotorSpd_R();
 };
 
 Mobile::Mobile(ros::NodeHandle nh, string desired_vel_subTopic)
@@ -52,7 +54,11 @@ void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
         computeWheelSpd();
     }
     else
-        omega_L = omega_R = 0;    cout << "L: " << omega_L << " R: " << omega_R << endl;
+        omega_L = omega_R = 0;
+
+    cout << "L: " << omega_L << " R: " << omega_R << endl;
+    motorSpd_L.data = omega_L;
+    motorSpd_R.data = omega_R;    
     
 }
 
@@ -69,16 +75,12 @@ void Mobile::computeWheelSpd()
 
     omega_L = (v_norm-omega_self*width/2)/wheelRadius;
     omega_R = (v_norm+omega_self*width/2)/wheelRadius;
-
-    cout << "L: " << omega_L << " R: " << omega_R << endl;
-
-    motorSpd.data.push_back(omega_L);
-    motorSpd.data.push_back(omega_R);
 }
 
 void Mobile::setMobileParam(float w, float r){width = w; wheelRadius = r;}
 void Mobile::setPdCtrlParam(float kp, float kd){kp_omega = kp; kd_omega = kd;}
-std_msgs::Float64MultiArray Mobile::getMotorSpd(){return motorSpd;}
+std_msgs::Float64 Mobile::getMotorSpd_L(){return motorSpd_L;}
+std_msgs::Float64 Mobile::getMotorSpd_R(){return motorSpd_R;}
 
 int main(int argc, char** argv)
 {
@@ -86,7 +88,8 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     ros::Rate rate(100);
 
-    ros::Publisher motorSpd_pub = nh.advertise<std_msgs::Float64MultiArray>("/motor_speed", 2);
+    ros::Publisher motorSpd_L_pub = nh.advertise<std_msgs::Float64>("/motor_speed_L", 2);
+    ros::Publisher motorSpd_R_pub = nh.advertise<std_msgs::Float64>("/motor_speed_R", 2);
 
     Mobile car(nh, "/track/vel");
     car.setMobileParam(0.11, 0.0325);
@@ -94,8 +97,8 @@ int main(int argc, char** argv)
 
     while(ros::ok())
     {
-        motorSpd_pub.publish(car.getMotorSpd());
-
+        motorSpd_L_pub.publish(car.getMotorSpd_L());
+        motorSpd_L_pub.publish(car.getMotorSpd_R());
         ros::spinOnce();
         rate.sleep();
     }
