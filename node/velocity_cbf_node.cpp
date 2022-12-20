@@ -121,7 +121,7 @@ int main(int argc, char** argv)
     ros::Rate rate(100);
 
     CBF cbf(nh, "/aprilTag_pos");
-    cbf.setCBFparam(0.3, 0.2, 0.6);
+    cbf.setCBFparam(0.3, 0.2, 0.3);
     geometry_msgs::TwistStamped desired_vel;
     geometry_msgs::TwistStamped desired_vel_raw;
     desired_vel.twist.linear.x = 0;
