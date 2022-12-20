@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     while(ros::ok())
     {
         motorSpd_L_pub.publish(car.getMotorSpd_L());
-        motorSpd_L_pub.publish(car.getMotorSpd_R());
+        motorSpd_R_pub.publish(car.getMotorSpd_R());
         ros::spinOnce();
         rate.sleep();
     }
