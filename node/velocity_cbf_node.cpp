@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class CBF
+class Track_CBF
 {
 private:
     geometry_msgs::PoseStamped aprilTag_pos;
@@ -20,8 +20,8 @@ private:
     float gamma;
 
 public:
-    CBF();
-    CBF(ros::NodeHandle nh, string aprilTag_subTopic);
+    Track_CBF();
+    Track_CBF(ros::NodeHandle nh, string aprilTag_subTopic);
     void aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void setCBFparam(float dis_t, float dis_s, float gamma);
     float getTrackDistance();
@@ -32,18 +32,18 @@ public:
     int QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel);
 };
 
-CBF::CBF(ros::NodeHandle nh, string aprilTag_subTopic)
+Track_CBF::Track_CBF(ros::NodeHandle nh, string aprilTag_subTopic)
 {
-    aprilTag_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(aprilTag_subTopic, 10, &CBF::aprilTag_pose_cb, this);
+    aprilTag_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(aprilTag_subTopic, 10, &Track_CBF::aprilTag_pose_cb, this);
     distance_safe = distance_track = gamma = 0.5;
 }
 
-void CBF::aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
+void Track_CBF::aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     aprilTag_pos = *msg;
 }
 
-void CBF::setCBFparam(float dis_t, float dis_s, float gm)
+void Track_CBF::setCBFparam(float dis_t, float dis_s, float gm)
 {
     distance_track = dis_t;
     distance_safe = dis_s;
@@ -51,12 +51,12 @@ void CBF::setCBFparam(float dis_t, float dis_s, float gm)
 
 }
 
-float CBF::getTrackDistance(){ return distance_track;}
-float CBF::getSafeDistance(){ return distance_safe;}
-float CBF::getGamma(){ return gamma;}
-geometry_msgs::PoseStamped CBF::getTagPose(){ return aprilTag_pos;}
+float Track_CBF::getTrackDistance(){ return distance_track;}
+float Track_CBF::getSafeDistance(){ return distance_safe;}
+float Track_CBF::getGamma(){ return gamma;}
+geometry_msgs::PoseStamped Track_CBF::getTagPose(){ return aprilTag_pos;}
 
-int CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel)
+int Track_CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel)
 {
     Eigen::SparseMatrix<double> hessian_Matrix;
     Eigen::VectorXd gradient;
@@ -126,8 +126,8 @@ int main(int argc, char** argv)
 
     ros::Rate rate(100);
 
-    CBF cbf(nh, "/aprilTag_pos");
-    cbf.setCBFparam(0.3, 0.2, 0.3);
+    Track_CBF cbf(nh, "/aprilTag_pos");
+    cbf.setCBFparam(0.3, 0.2, 0.3); // track_distance, safe_distance, gamma
     geometry_msgs::TwistStamped desired_vel;
     geometry_msgs::TwistStamped desired_vel_raw;
     desired_vel.twist.linear.x = 0;
