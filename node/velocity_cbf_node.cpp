@@ -107,6 +107,12 @@ int CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs:
     *desired_vel = desired_vel_raw;
     desired_vel->twist.linear.x = QPSolution(0);
     desired_vel->twist.linear.y = QPSolution(1);
+    if(desired_vel->twist.linear.x > 100 || desired_vel->twist.linear.y > 100)
+    {
+        desired_vel->twist.linear.x = 0;
+        desired_vel->twist.linear.y = 0;
+    }
+
 
     return 0;
 }
