@@ -15,7 +15,6 @@ private:
     geometry_msgs::PoseStamped aprilTag_pos;
     geometry_msgs::PoseStamped self_pos;
     ros::Subscriber aprilTag_pos_sub;
-    float distance_track;
     float distance_safe;
     float gamma;
 
@@ -23,8 +22,7 @@ public:
     Obstacle_CBF();
     Obstacle_CBF(ros::NodeHandle nh, string aprilTag_subTopic);
     void aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
-    void setCBFparam(float dis_t, float dis_s, float gamma);
-    float getTrackDistance();
+    void setCBFparam(float dis_s, float gamma);
     float getSafeDistance();
     float getGamma();
     geometry_msgs::PoseStamped getTagPose();
@@ -43,15 +41,13 @@ void Obstacle_CBF::aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& 
     aprilTag_pos = *msg;
 }
 
-void Obstacle_CBF::setCBFparam(float dis_t, float dis_s, float gm)
+void Obstacle_CBF::setCBFparam(float dis_s, float gm)
 {
-    distance_track = dis_t;
     distance_safe = dis_s;
     gamma = gm;
 
 }
 
-float Obstacle_CBF::getTrackDistance(){ return distance_track;}
 float Obstacle_CBF::getSafeDistance(){ return distance_safe;}
 float Obstacle_CBF::getGamma(){ return gamma;}
 geometry_msgs::PoseStamped Obstacle_CBF::getTagPose(){ return aprilTag_pos;}
@@ -79,9 +75,7 @@ int Obstacle_CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geome
 
     linearMatrix.insert(0, 0) = 2*(self_pos.pose.position.x - aprilTag_pos.pose.position.x);
     linearMatrix.insert(0, 1) = 2*(self_pos.pose.position.y - aprilTag_pos.pose.position.y);
-    upperBound(0) = gamma*(pow(distance_track, 2)
-                                -pow(self_pos.pose.position.x - aprilTag_pos.pose.position.x, 2)
-                                -pow(self_pos.pose.position.y - aprilTag_pos.pose.position.y, 2));
+    upperBound(0) = OsqpEigen::INFTY;
     lowerBound(0) = -gamma*(pow(self_pos.pose.position.x - aprilTag_pos.pose.position.x, 2)
                                 +pow(self_pos.pose.position.y - aprilTag_pos.pose.position.y, 2)
                                 -pow(distance_safe, 2));
@@ -122,12 +116,12 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "obstacle_cbf");
     ros::NodeHandle nh;
 
-    ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/track/vel", 2);
+    ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/final/vel", 2);
 
     ros::Rate rate(100);
 
-    Obstacle_CBF cbf(nh, "/aprilTag_pos");
-    Obstacle_CBF.setCBFparam(0.3, 0.2, 0.3); // track_distance, safe_distance, gamma
+    Obstacle_CBF cbf(nh, "/track/vel");
+    Obstacle_CBF.setCBFparam(0.2, 0.3); // safe_distance, gamma
     geometry_msgs::TwistStamped desired_vel;
     geometry_msgs::TwistStamped desired_vel_raw;
     desired_vel.twist.linear.x = 0;

@@ -93,7 +93,7 @@ int main(int argc, char** argv)
 
     Mobile car(nh, "/track/vel");
     car.setMobileParam(0.11, 0.0325);
-    car.setPdCtrlParam(0.1, 1);
+    car.setPdCtrlParam(0.7, 1);
 
     while(ros::ok())
     {
