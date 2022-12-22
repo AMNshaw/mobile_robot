@@ -59,7 +59,11 @@ void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
     cout << "L: " << omega_L << " R: " << omega_R << endl;
     motorSpd_L.data = omega_L;
     motorSpd_R.data = omega_R;    
-    
+    while(motorSpd_L.data > 3.0 || motorSpd_R.data > 3.0)
+    {
+        motorSpd_L.data = motorSpd_L.data*0.9;
+        motorSpd_R.data = motorSpd_R.data*0.9;
+    }
 }
 
 void Mobile::computeWheelSpd()
