@@ -101,10 +101,10 @@ int Obstacle_CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geome
     *desired_vel = desired_vel_raw;
     desired_vel->twist.linear.x = QPSolution(0);
     desired_vel->twist.linear.y = QPSolution(1);
-    if(desired_vel->twist.linear.x > 100 || desired_vel->twist.linear.y > 100)
+    while(desired_vel->twist.linear.x > 3.5 || desired_vel->twist.linear.y > 3.5)
     {
-        desired_vel->twist.linear.x = 0;
-        desired_vel->twist.linear.y = 0;
+        desired_vel->twist.linear.x = desired_vel->twist.linear.x*0.9;
+        desired_vel->twist.linear.y = desired_vel->twist.linear.y*0.9;
     }
 
 
