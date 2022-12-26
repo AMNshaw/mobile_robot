@@ -65,9 +65,11 @@ void Mobile::computeAcc()
 }
 
 void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
-{  
+{   
     desired_vel.twist.linear.x = msg->twist.linear.x;
     desired_vel.twist.linear.y = msg->twist.linear.y;
+    if(desired_vel.twist.linear.x == 0 && desired_vel.twist.linear.y == 0)
+        desired_vel.twist.linear.x = desired_vel.twist.linear.y = 0.00001;
     computeAcc();
     current_vel.twist.linear.x = current_vel.twist.linear.x + acc.x*delta_t;
     current_vel.twist.linear.y = current_vel.twist.linear.y + acc.y*delta_t;

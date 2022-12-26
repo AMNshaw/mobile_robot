@@ -12,20 +12,20 @@ using namespace std;
 class Obstacle_CBF
 {
 private:
-    geometry_msgs::PoseStamped aprilTag_pos;
     geometry_msgs::PoseStamped self_pos;
-    ros::Subscriber aprilTag_pos_sub;
+    geometry_msgs::Point lidar_scan;
+    ros::Subscriber lidar_scan_sub;
     float distance_safe;
     float gamma;
 
 public:
     Obstacle_CBF();
-    Obstacle_CBF(ros::NodeHandle nh, string aprilTag_subTopic);
-    void aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
+    Obstacle_CBF(ros::NodeHandle nh, string lidar_subTopic);
+    void lidar_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void setCBFparam(float dis_s, float gamma);
     float getSafeDistance();
     float getGamma();
-    geometry_msgs::PoseStamped getTagPose();
+    geometry_msgs::PoseStamped getLidarPose();
 
     int QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel);
 };
