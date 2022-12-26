@@ -78,13 +78,17 @@ void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 
     cout << "L: " << omega_L << " R: " << omega_R << endl;
 
-    motorSpd_L.data = omega_L;
-    motorSpd_R.data = omega_R;    
-    while(abs(motorSpd_L.data) > 3.0 || abs(motorSpd_R.data) > 3.0)
+       
+    while(abs(omega_L) > 3.0 || abs(omega_R) > 3.0)
     {
-        motorSpd_L.data = motorSpd_L.data*0.9;
-        motorSpd_R.data = motorSpd_R.data*0.9;
+        omega_L = omega_L*0.9;
+        omega_R = omega_R*0.9;
     }
+    if(omega_L < 0.2 && omega_R < 0.2)
+        omega_L = omega_R = 0;
+    motorSpd_L.data = omega_L;
+    motorSpd_R.data = omega_R; 
+
 }
 
 void Mobile::computeWheelSpd()
@@ -120,7 +124,7 @@ int main(int argc, char** argv)
     Mobile car(nh, "/track/vel");
     car.setMobileParam(0.11, 0.0325);
     car.setPdCtrlParam(0.7, 1);
-    car.setViutualInputParam(1.0);
+    car.setViutualInputParam(15);
 
     while(ros::ok())
     {
