@@ -21,24 +21,24 @@ private:
 public:
     Obstacle_CBF();
     Obstacle_CBF(ros::NodeHandle nh, string lidar_subTopic);
-    void lidar_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg);
+    void lidar_pose_cb(const geometry_msgs::Point::ConstPtr& msg);
     void setCBFparam(float dis_s, float gamma);
     float getSafeDistance();
     float getGamma();
-    geometry_msgs::PoseStamped getLidarPose();
+    geometry_msgs::Point getLidarPose();
 
     int QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel);
 };
 
-Obstacle_CBF::Obstacle_CBF(ros::NodeHandle nh, string aprilTag_subTopic)
+Obstacle_CBF::Obstacle_CBF(ros::NodeHandle nh, string lidar_subTopic)
 {
-    aprilTag_pos_sub = nh.subscribe<geometry_msgs::PoseStamped>(aprilTag_subTopic, 10, &Obstacle_CBF::aprilTag_pose_cb, this);
-    distance_safe = distance_track = gamma = 0.5;
+    lidar_scan_sub = nh.subscribe<geometry_msgs::PoseStamped>(lidar_subTopic, 10, &Obstacle_CBF::lidar_pose_cb, this);
+    distance_safe = gamma = 0.5;
 }
 
-void Obstacle_CBF::aprilTag_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
+void Obstacle_CBF::lidar_pose_cb(const geometry_msgs::Point::ConstPtr& msg)
 {
-    aprilTag_pos = *msg;
+    lidar_scan = *msg;
 }
 
 void Obstacle_CBF::setCBFparam(float dis_s, float gm)
@@ -50,7 +50,7 @@ void Obstacle_CBF::setCBFparam(float dis_s, float gm)
 
 float Obstacle_CBF::getSafeDistance(){ return distance_safe;}
 float Obstacle_CBF::getGamma(){ return gamma;}
-geometry_msgs::PoseStamped Obstacle_CBF::getTagPose(){ return aprilTag_pos;}
+geometry_msgs::Point Obstacle_CBF::getLidarPose(){ return lidar_scan;}
 
 int Obstacle_CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geometry_msgs::TwistStamped* desired_vel)
 {
