@@ -122,7 +122,7 @@ int main(int argc, char** argv)
     ros::Publisher motorSpd_L_pub = nh.advertise<std_msgs::Float64>("/motor_speed_L", 2);
     ros::Publisher motorSpd_R_pub = nh.advertise<std_msgs::Float64>("/motor_speed_R", 2);
 
-    Mobile car(nh, "/final/vel");
+    Mobile car(nh, "/vel/final");
     car.setMobileParam(0.11, 0.0325);
     car.setPdCtrlParam(0.7, 1);
     car.setViutualInputParam(20);

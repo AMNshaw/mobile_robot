@@ -122,7 +122,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "velocity_cbf");
     ros::NodeHandle nh;
 
-    ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/track/vel", 2);
+    ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/vel/track", 2);
 
     ros::Rate rate(100);
 
