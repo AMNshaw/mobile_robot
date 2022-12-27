@@ -116,8 +116,8 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "obstacle_cbf");
     ros::NodeHandle nh;
 
-    ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/vel/track", 2);
-    ros::Subscriber desired_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vel/final", 10, desired_vel_cb);
+    ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/vel/final", 2);
+    ros::Subscriber desired_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/vel/track", 10, desired_vel_cb);
 
     ros::Rate rate(100);
 
