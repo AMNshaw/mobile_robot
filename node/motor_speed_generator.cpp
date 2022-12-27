@@ -66,17 +66,12 @@ void Mobile::computeAcc()
 
 void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {   
-    /*
+    
     desired_vel.twist.linear.x = msg->twist.linear.x;
     desired_vel.twist.linear.y = msg->twist.linear.y;
     computeAcc();
     current_vel.twist.linear.x = current_vel.twist.linear.x + acc.x*delta_t;
     current_vel.twist.linear.y = current_vel.twist.linear.y + acc.y*delta_t;
-    computeWheelSpd();
-    */
-    current_vel.twist.linear.x = msg->twist.linear.x;
-    current_vel.twist.linear.y = msg->twist.linear.y;
-    //computeAcc();
     computeWheelSpd();
 
     cout << "L: " << omega_L << " R: " << omega_R << endl;
@@ -128,7 +123,7 @@ int main(int argc, char** argv)
     ros::Publisher motorSpd_L_pub = nh.advertise<std_msgs::Float64>("/motor_speed_L", 2);
     ros::Publisher motorSpd_R_pub = nh.advertise<std_msgs::Float64>("/motor_speed_R", 2);
 
-    Mobile car(nh, "/track/vel");
+    Mobile car(nh, "/final/vel");
     car.setMobileParam(0.11, 0.0325);
     car.setPdCtrlParam(0.7, 1);
     car.setViutualInputParam(20);

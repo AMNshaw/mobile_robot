@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 
 using namespace std;
+geometry_msgs::TwistStamped desired_vel;
 
 class Obstacle_CBF
 {
@@ -32,7 +33,7 @@ public:
 
 Obstacle_CBF::Obstacle_CBF(ros::NodeHandle nh, string lidar_subTopic)
 {
-    lidar_scan_sub = nh.subscribe<geometry_msgs::PoseStamped>(lidar_subTopic, 10, &Obstacle_CBF::lidar_pose_cb, this);
+    lidar_scan_sub = nh.subscribe<geometry_msgs::Point>(lidar_subTopic, 10, &Obstacle_CBF::lidar_pose_cb, this);
     distance_safe = gamma = 0.5;
 }
 
@@ -73,11 +74,11 @@ int Obstacle_CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geome
     lowerBound.resize(1);
     linearMatrix.resize(1, 2);
 
-    linearMatrix.insert(0, 0) = 2*(self_pos.pose.position.x - aprilTag_pos.pose.position.x);
-    linearMatrix.insert(0, 1) = 2*(self_pos.pose.position.y - aprilTag_pos.pose.position.y);
+    linearMatrix.insert(0, 0) = 2*(self_pos.pose.position.x - lidar_scan.x);
+    linearMatrix.insert(0, 1) = 2*(self_pos.pose.position.y - lidar_scan.y);
     upperBound(0) = OsqpEigen::INFTY;
-    lowerBound(0) = -gamma*(pow(self_pos.pose.position.x - aprilTag_pos.pose.position.x, 2)
-                                +pow(self_pos.pose.position.y - aprilTag_pos.pose.position.y, 2)
+    lowerBound(0) = -gamma*(pow(self_pos.pose.position.x - lidar_scan.x, 2)
+                                +pow(self_pos.pose.position.y - lidar_scan.y, 2)
                                 -pow(distance_safe, 2));
 
 
@@ -105,31 +106,35 @@ int Obstacle_CBF::QPsolve_vel(geometry_msgs::TwistStamped desired_vel_raw, geome
     return 0;
 }
 
+void desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
+{
+    desired_vel = *msg;
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "obstacle_cbf");
     ros::NodeHandle nh;
 
     ros::Publisher track_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("/final/vel", 2);
+    ros::Subscriber desired_vel_sub = nh.subscribe<geometry_msgs::TwistStamped>("/track/vel", 10, desired_vel_cb);
 
     ros::Rate rate(100);
 
-    Obstacle_CBF cbf(nh, "/track/vel");
-    Obstacle_CBF.setCBFparam(0.2, 0.3); // safe_distance, gamma
-    geometry_msgs::TwistStamped desired_vel;
-    geometry_msgs::TwistStamped desired_vel_raw;
+    Obstacle_CBF cbf(nh, "/obstacle_distance");
+    cbf.setCBFparam(0.2, 0.3); // safe_distance, gamma
+    geometry_msgs::TwistStamped final_vel;
     desired_vel.twist.linear.x = 0;
     desired_vel.twist.linear.y = 0;
-    desired_vel_raw.twist.linear.x = 0;
-    desired_vel_raw.twist.linear.y = 0;
-
+    final_vel.twist.linear.x = 0;
+    final_vel.twist.linear.y = 0;
     
     while(ros::ok())
     {
-        cbf.QPsolve_vel(desired_vel_raw , &desired_vel);
-        cout << desired_vel << endl;
+        cbf.QPsolve_vel(desired_vel , &final_vel);
+        cout << final_vel << endl;
 
-        track_vel_pub.publish(desired_vel);
+        track_vel_pub.publish(final_vel);
 
         ros::spinOnce();
         rate.sleep();

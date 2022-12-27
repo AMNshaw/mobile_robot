@@ -160,6 +160,15 @@ OsqpEigen::OsqpEigen )
 target_include_directories(velocity_cbf_node PRIVATE
 include/${PROJECT_NAME}/ )
 
+# obstacle_cbf_node
+add_executable(obstacle_cbf_node
+node/obstacle_cbf_node.cpp )
+target_link_libraries(obstacle_cbf_node
+${catkin_LIBRARIES} 
+OsqpEigen::OsqpEigen )
+target_include_directories(obstacle_cbf_node PRIVATE
+include/${PROJECT_NAME}/ )
+
 # motor_speed_generator
 add_executable(motor_speed_generator node/motor_speed_generator.cpp)
 target_link_libraries(motor_speed_generator ${catkin_LIBRARIES})
