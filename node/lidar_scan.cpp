@@ -1,7 +1,9 @@
 #include <cmath>
+#include <vector>
 #include <iostream>
 #include <iterator>
 #include <ros/ros.h>
+#include <algorithm>
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/PointStamped.h>
@@ -27,28 +29,47 @@ int main(int argc, char **argv)
 	ros::Rate rate(100);
 	
 	geometry_msgs::PointStamped input_;
-	float threshold = 0.25;
-	float angle, x, y;
+	float threshold = 0.35;
+	float angle, x, y, min_;
+	int index;
+	bool ck;
 
 	while(ros::ok())
 	{
 		ros::spinOnce();
+		
+		min_ = threshold;
+		ck = true;
 
 		for (int i = 0;i < hold.ranges.size();i++)
 		{
 			if (hold.ranges[i] <= threshold)
 			{
-				ROS_INFO("Countering Obstacle, distance: %f", hold.ranges[i]);
-				angle = hold.angle_min + i*hold.angle_increment;
-				//ROS_INFO("Direction: %f", angle);
-				x = hold.ranges[i]*cos(angle);
-				y = hold.ranges[i]*sin(angle);
-				input_.point.x = x;
-				input_.point.y = y;
-				obd_pub.publish(input_);
+				if (hold.ranges[i] <=min_)
+				{
+					min_ = hold.ranges[i];
+					index = i;
+					ck = false;
+				}
 			}
 		}
 
+		if (ck)
+		{
+			input_.point.x = 0.7;
+			input_.point.y = 0.7;
+			obd_pub.publish(input_);
+		}
+		else
+		{
+			angle = hold.angle_min + index*hold.angle_increment;
+			x = min_*cos(angle);
+			y = min_*sin(angle);
+			input_.point.x = x;
+			input_.point.y = y;
+			obd_pub.publish(input_);
+		}
+		
 		rate.sleep();
 	}
 
