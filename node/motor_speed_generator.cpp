@@ -66,7 +66,6 @@ void Mobile::computeAcc()
 
 void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {   
-    
     desired_vel.twist.linear.x = msg->twist.linear.x;
     desired_vel.twist.linear.y = msg->twist.linear.y;
     computeAcc();
