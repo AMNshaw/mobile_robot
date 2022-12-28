@@ -66,11 +66,17 @@ void Mobile::computeAcc()
 
 void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {   
+    /*
     desired_vel.twist.linear.x = msg->twist.linear.x;
     desired_vel.twist.linear.y = msg->twist.linear.y;
     computeAcc();
     current_vel.twist.linear.x = current_vel.twist.linear.x + acc.x*delta_t;
     current_vel.twist.linear.y = current_vel.twist.linear.y + acc.y*delta_t;
+    computeWheelSpd();
+    */
+
+    current_vel.twist.linear.x = msg->twist.linear.x;
+    current_vel.twist.linear.y = msg->twist.linear.y;
     computeWheelSpd();
 
     cout << "L: " << omega_L << " R: " << omega_R << endl;
@@ -84,6 +90,7 @@ void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 
     if(abs(omega_L) < 0.1 && abs(omega_R) < 0.1)
         omega_L = omega_R = 0;
+
     motorSpd_L.data = omega_L;
     motorSpd_R.data = omega_R; 
 
