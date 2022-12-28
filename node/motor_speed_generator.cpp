@@ -90,9 +90,9 @@ void Mobile::computeWheelSpd()
         theta = -acos(current_vel.twist.linear.x/v_norm);
 
     // PD control of self spinning
-    if(v_norm != 0)
+    if(v_norm > 0.01)
         omega_self = kp_omega*theta;
-    else
+    else 
         omega_self = 0;
 
     if(current_vel.twist.linear.x >= 0)
@@ -111,9 +111,6 @@ void Mobile::computeWheelSpd()
         omega_L = omega_L*0.9;
         omega_R = omega_R*0.9;
     }
-
-    if(v_norm < 0.01)
-        omega_L = omega_R = 0;
 
     motorSpd_L.data = omega_L;
     motorSpd_R.data = omega_R; 
