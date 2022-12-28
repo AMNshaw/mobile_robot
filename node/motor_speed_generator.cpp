@@ -106,11 +106,14 @@ void Mobile::computeWheelSpd()
         omega_R = -(v_norm+omega_self*width/2)/wheelRadius;  
     }
 
-    while(abs(omega_L) > 3.0 || abs(omega_R) > 3.0)
+    while(abs(omega_L) > 2.5 || abs(omega_R) > 2.5)
     {
         omega_L = omega_L*0.9;
         omega_R = omega_R*0.9;
     }
+
+    if(v_norm < 0.01)
+        omega_L = omega_R = 0;
 
     motorSpd_L.data = omega_L;
     motorSpd_R.data = omega_R; 
@@ -133,7 +136,7 @@ int main(int argc, char** argv)
 
     Mobile car(nh, "/vel/final");
     car.setMobileParam(0.11, 0.0325);
-    car.setPdCtrlParam(0.7, 1);
+    car.setPdCtrlParam(0.5, 1);
     car.setViutualInputParam(20);
 
     while(ros::ok())

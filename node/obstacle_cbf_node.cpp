@@ -122,7 +122,7 @@ int main(int argc, char** argv)
     ros::Rate rate(100);
 
     Obstacle_CBF cbf(nh, "/obstacle_distance");
-    cbf.setCBFparam(0.3, 0.5); // safe_distance, gamma
+    cbf.setCBFparam(0.3, 0.3); // safe_distance, gamma
     geometry_msgs::TwistStamped final_vel;
     desired_vel.twist.linear.x = 0;
     desired_vel.twist.linear.y = 0;

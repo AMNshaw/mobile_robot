@@ -60,7 +60,7 @@ void RobotFollower::cameraCallback(const apriltag_ros::AprilTagDetectionArray::C
 	}
 	else
 	{
-		input.pose.position.x = 0.25;
+		input.pose.position.x = 0.4;
 		input.pose.position.y = 0.0;
 		input.pose.position.z = 0.0;
 	}
