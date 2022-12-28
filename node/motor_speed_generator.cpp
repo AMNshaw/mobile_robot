@@ -75,9 +75,9 @@ void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
     computeWheelSpd();
     
 
-    current_vel.twist.linear.x = msg->twist.linear.x;
+    /*current_vel.twist.linear.x = msg->twist.linear.x;
     current_vel.twist.linear.y = msg->twist.linear.y;
-    computeWheelSpd();
+    computeWheelSpd();*/
 
     cout << "L: " << omega_L << " R: " << omega_R << endl;
 
