@@ -103,8 +103,16 @@ void Mobile::computeWheelSpd()
     else
         omega_self = 0;
 
-    omega_L = (v_norm-omega_self*width/2)/wheelRadius;
-    omega_R = (v_norm+omega_self*width/2)/wheelRadius;
+    if(theta>= 0)
+    {
+        omega_L = (v_norm-omega_self*width/2)/wheelRadius;
+        omega_R = (v_norm+omega_self*width/2)/wheelRadius;        
+    }
+    else
+    {
+        omega_L = -(v_norm-omega_self*width/2)/wheelRadius;
+        omega_R = -(v_norm+omega_self*width/2)/wheelRadius;  
+    }
 }
 
 void Mobile::setMobileParam(float w, float r){width = w; wheelRadius = r;}
