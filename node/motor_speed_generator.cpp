@@ -112,7 +112,7 @@ void Mobile::computeWheelSpd()
         omega_R = omega_R*0.9;
     }
 
-    if(abs(omega_L) < 0.1 && abs(omega_R) < 0.1)
+    if(v_norm < 0.01)
         omega_L = omega_R = 0;
 
     motorSpd_L.data = omega_L;

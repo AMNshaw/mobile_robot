@@ -127,7 +127,7 @@ int main(int argc, char** argv)
     ros::Rate rate(100);
 
     Track_CBF cbf(nh, "/aprilTag_pos");
-    cbf.setCBFparam(0.3, 0.2, 0.3); // track_distance, safe_distance, gamma
+    cbf.setCBFparam(0.45, 0.35, 0.3); // track_distance, safe_distance, gamma
     geometry_msgs::TwistStamped desired_vel;
     geometry_msgs::TwistStamped desired_vel_raw;
     desired_vel.twist.linear.x = 0;
