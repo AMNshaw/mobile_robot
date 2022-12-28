@@ -42,6 +42,7 @@ public:
     void desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg);
     void computeWheelSpd();
     void computeAcc();
+    void computeVel();
     std_msgs::Float64 getMotorSpd_L();
     std_msgs::Float64 getMotorSpd_R();
 };
@@ -63,37 +64,21 @@ void Mobile::computeAcc()
     acc.y = kp_acc*(desired_vel.twist.linear.y - current_vel.twist.linear.y);
     cout << "accx " << acc.x << " accy " << acc.y << endl;
 }
+void Mobile::computeVel()
+{
+    current_vel.twist.linear.x = current_vel.twist.linear.x + acc.x*delta_t;
+    current_vel.twist.linear.y = current_vel.twist.linear.y + acc.y*delta_t;
+}
 
 void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {   
     
     desired_vel.twist.linear.x = msg->twist.linear.x;
     desired_vel.twist.linear.y = msg->twist.linear.y;
-    computeAcc();
-    current_vel.twist.linear.x = current_vel.twist.linear.x + acc.x*delta_t;
-    current_vel.twist.linear.y = current_vel.twist.linear.y + acc.y*delta_t;
-    computeWheelSpd();
-    
 
     /*current_vel.twist.linear.x = msg->twist.linear.x;
     current_vel.twist.linear.y = msg->twist.linear.y;
     computeWheelSpd();*/
-
-    cout << "L: " << omega_L << " R: " << omega_R << endl;
-
-       
-    while(abs(omega_L) > 3.0 || abs(omega_R) > 3.0)
-    {
-        omega_L = omega_L*0.9;
-        omega_R = omega_R*0.9;
-    }
-
-    if(abs(omega_L) < 0.1 && abs(omega_R) < 0.1)
-        omega_L = omega_R = 0;
-
-    motorSpd_L.data = omega_L;
-    motorSpd_R.data = omega_R; 
-
 }
 
 void Mobile::computeWheelSpd()
@@ -120,6 +105,18 @@ void Mobile::computeWheelSpd()
         omega_L = -(v_norm-omega_self*width/2)/wheelRadius;
         omega_R = -(v_norm+omega_self*width/2)/wheelRadius;  
     }
+
+    while(abs(omega_L) > 3.0 || abs(omega_R) > 3.0)
+    {
+        omega_L = omega_L*0.9;
+        omega_R = omega_R*0.9;
+    }
+
+    if(abs(omega_L) < 0.1 && abs(omega_R) < 0.1)
+        omega_L = omega_R = 0;
+
+    motorSpd_L.data = omega_L;
+    motorSpd_R.data = omega_R; 
 }
 
 void Mobile::setMobileParam(float w, float r){width = w; wheelRadius = r;}
@@ -144,6 +141,10 @@ int main(int argc, char** argv)
 
     while(ros::ok())
     {
+        car.computeAcc();
+        car.computeVel();
+        car.computeWheelSpd();
+
         motorSpd_L_pub.publish(car.getMotorSpd_L());
         motorSpd_R_pub.publish(car.getMotorSpd_R());
         ros::spinOnce();
