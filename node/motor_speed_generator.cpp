@@ -54,7 +54,7 @@ Mobile::Mobile(ros::NodeHandle nh, string desired_vel_subTopic)
     kp_omega = 1;
     kd_omega = 1;
     kp_acc = 1;
-    delta_t = 0.005;
+    delta_t = 0.01;
 }
 
 void Mobile::computeAcc()
@@ -66,14 +66,14 @@ void Mobile::computeAcc()
 
 void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
 {   
-    /*
+    
     desired_vel.twist.linear.x = msg->twist.linear.x;
     desired_vel.twist.linear.y = msg->twist.linear.y;
     computeAcc();
     current_vel.twist.linear.x = current_vel.twist.linear.x + acc.x*delta_t;
     current_vel.twist.linear.y = current_vel.twist.linear.y + acc.y*delta_t;
     computeWheelSpd();
-    */
+    
 
     current_vel.twist.linear.x = msg->twist.linear.x;
     current_vel.twist.linear.y = msg->twist.linear.y;
@@ -113,7 +113,7 @@ void Mobile::computeWheelSpd()
     if(current_vel.twist.linear.x >= 0)
     {
         omega_L = (v_norm-omega_self*width/2)/wheelRadius;
-        omega_R = (v_norm+omega_self*width/2)/wheelRadius;        
+        omega_R = (v_norm+omega_self*width/2)/wheelRadius;
     }
     else
     {
