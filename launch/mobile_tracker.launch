@@ -1,6 +1,6 @@
 <launch>
     <node name="apriltag_detection" pkg="mobile_robot" type="apriltag_detection"></node>
-    <!-- <node name="lidar_scan" pkg="mobile_robot" type="lidar_scan"></node> -->
+    <node name="lidar_scan" pkg="mobile_robot" type="lidar_scan"></node>
     <node name="velocity_cbf_node" pkg="mobile_robot" type="velocity_cbf_node"></node>
     <node name="motor_speed_generator" pkg="mobile_robot" type="motor_speed_generator"></node>
 </launch>
