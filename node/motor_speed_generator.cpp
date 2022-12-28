@@ -103,7 +103,7 @@ void Mobile::computeWheelSpd()
     else
         omega_self = 0;
 
-    if(theta >= 0)
+    if(current_vel.twist.linear.x >= 0)
     {
         omega_L = (v_norm-omega_self*width/2)/wheelRadius;
         omega_R = (v_norm+omega_self*width/2)/wheelRadius;        
