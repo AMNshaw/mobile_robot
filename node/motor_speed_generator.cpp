@@ -61,7 +61,7 @@ void Mobile::computeAcc()
 {
     acc.x = kp_acc*(desired_vel.twist.linear.x - current_vel.twist.linear.x);
     acc.y = kp_acc*(desired_vel.twist.linear.y - current_vel.twist.linear.y);
-    //cout << "accx " << acc.x << " accy " << acc.y << endl;
+    cout << "accx " << acc.x << " accy " << acc.y << endl;
 }
 
 void Mobile::desired_vel_cb(const geometry_msgs::TwistStamped::ConstPtr& msg)
